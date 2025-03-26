@@ -13,7 +13,7 @@ body, html {
 }
 
 body {
-  background-image: linear-gradient(135deg, #011220 25%, #121212 75%);
+  background-image: linear-gradient(135deg, #011627 25%, #141414f5 75%);
   color: #ffffff;
   font-family: 'Courier New', Courier, monospace;
 }
@@ -31,7 +31,7 @@ body {
   width: 60vw;
   height: 130px;
   /* height: 80vh; */
-  background-color: #011627;
+  background-color: #031D2D;
 
   margin-top: 30vw;
 
@@ -52,13 +52,15 @@ body {
 }
 
 .url-form input {
+  margin-top: 10px;
+  margin-bottom: 14px;
   width: 80%;
   /* width: 250px; */
   padding: 10px 15px;
   font-family: 'Orbitron', sans-serif;
   font-size: 16px;
   color: #D91734;
-  background-color: #121212;
+  background-color: #141414f5;
   border: 2px solid #D91734;
   box-shadow: 3px 3px 0 #D917347c;
   outline: none;
@@ -73,7 +75,6 @@ body {
 }
 
 .url-form button {
-  margin-top: 5px;
   padding: 2px 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 24px;
@@ -86,7 +87,7 @@ body {
 }
 
 .url-form button:hover {
-  background-color: #010F1A;
+  background-color: #011627;
   box-shadow: 4px 4px 0 #D917347c;
   border-color: #D91734;
   color: #D91734;
