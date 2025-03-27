@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
+import { Message, Header } from './protocol/message';
+
 const backendUrl = "ws://localhost:3080/ws"
 
 function Application() {
@@ -27,18 +29,18 @@ function Application() {
 
     console.log(`Connection state changed, status is: ${connectionStatus}`)
     if (readyState === ReadyState.OPEN) {
-      // sendJsonMessage({
-      //   event: "subscribe",
-      //   data: {
-      //     channel: "general-chatroom",
-      //   },
-      // })
+
     }
   }, [readyState])
 
   function download(formData) {
     const url = formData.get("url");
-    alert(`You tried to download file from url: '${url}'`);
+
+    // const message = Message(
+
+    // )
+    // sendMessage()
+    // alert(`You tried to download file from url: '${url}'`);
   }
 
   return (
