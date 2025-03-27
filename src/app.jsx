@@ -1,10 +1,41 @@
 "use strict"
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+
+const backendUrl = "ws://localhost:3080/ws"
 
 function Application() {
+  const { sendMessage, lastMessage, readyState } = 
+    useWebSocket(backendUrl,
+      {
+        share: false,
+        shouldReconnect: () => false,
+      },
+    );
+
+  useEffect(() => {
+    const connectionStatus = {
+      [ReadyState.CONNECTING]: 'Connecting',
+      [ReadyState.OPEN]: 'Open',
+      [ReadyState.CLOSING]: 'Closing',
+      [ReadyState.CLOSED]: 'Closed',
+      [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+    }[readyState];
+
+    console.log(`Connection state changed, status is: ${connectionStatus}`)
+    if (readyState === ReadyState.OPEN) {
+      // sendJsonMessage({
+      //   event: "subscribe",
+      //   data: {
+      //     channel: "general-chatroom",
+      //   },
+      // })
+    }
+  }, [readyState])
+
   function download(formData) {
     const url = formData.get("url");
     alert(`You tried to download file from url: '${url}'`);
