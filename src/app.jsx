@@ -34,6 +34,19 @@ function Application() {
     }
   }, [readyState])
 
+  useEffect(() => {
+    if (lastMessage == null) {
+      return;
+    }
+
+    const handleMessage = async(lastMessage) => {
+      const message = await protocol.parseMessage(lastMessage);
+      console.log(message);
+    };
+
+    handleMessage(lastMessage);
+  }, [lastMessage]);
+
   const download = useCallback(
     function(formData) {
       const url = formData.get("url");

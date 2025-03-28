@@ -2,6 +2,15 @@
 
 import types from './types'
 
+export function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+  .replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0, 
+          v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+  });
+}
+
 class Header {
   constructor(type, uuid) {
     this.type = type;
@@ -9,16 +18,7 @@ class Header {
   }
 }
 
-function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-    .replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0, 
-            v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-class Message {
+export class Message {
   constructor(header, payload) {
     this.header = header;
     this.payload = payload;
@@ -52,9 +52,22 @@ class Message {
 
     return packet;
   }
+
+  static parse(data) {
+    const headerLength = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+
+    const headerBinary = data.slice(4, 4 + headerLength);
+    const headerJson = new TextDecoder().decode(headerBinary);
+    const headerObj = JSON.parse(headerJson);
+
+    const payload = data.slice(4 + headerLength);
+
+    const header = new Header(headerObj.type, headerObj.uuid);
+    return new Message(header, payload);
+  }
 }
 
-function buildDownloadingRequest(uuid, url) {
+export function buildDownloadingRequest(uuid, url) {
   const payload = {
     url: url
   }
@@ -68,8 +81,16 @@ function buildDownloadingRequest(uuid, url) {
   )
 }
 
-export {
-  uuidv4,
-  Message,
-  buildDownloadingRequest
+export async function parseMessage(lastMessage) {
+  const dataBuffer = await lastMessage.data.arrayBuffer();
+  const data = new Uint8Array(dataBuffer);
+  const preParsedMessage = Message.parse(data);
+
+  if (preParsedMessage.header.type == types.Error) {
+    const json = new TextDecoder().decode(preParsedMessage.payload);
+    const payload = JSON.parse(json);
+    return preParsedMessage.payload = payload;
+  }
+
+  throw new Error("Failed to parse backend message");
 }
