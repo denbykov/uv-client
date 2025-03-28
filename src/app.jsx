@@ -1,11 +1,12 @@
 "use strict"
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
+// import randomUUID from 'crypto';
 
-import { Message, Header } from './protocol/message';
+import * as protocol from './protocol/message';
 
 const backendUrl = "ws://localhost:3080/ws"
 
@@ -33,15 +34,14 @@ function Application() {
     }
   }, [readyState])
 
-  function download(formData) {
-    const url = formData.get("url");
+  const download = useCallback(
+    function(formData) {
+      const url = formData.get("url");
 
-    // const message = Message(
-
-    // )
-    // sendMessage()
-    // alert(`You tried to download file from url: '${url}'`);
-  }
+      const request = protocol.buildDownloadingRequest(protocol.uuidv4(), url);
+      sendMessage(request.serialize(), [])
+    }
+  );
 
   return (
   <>
