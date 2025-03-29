@@ -18,6 +18,50 @@ body {
   font-family: 'Courier New', Courier, monospace;
 }
 
+.label {
+  font-family: 'Orbitron', sans-serif;
+  color: #D91734;
+}
+
+.error {
+  font-family: 'Orbitron', sans-serif;
+  color: #FF9F1C;
+}
+
+.error.bordered {
+  border: 2px solid #FF9F1C;
+  box-shadow: 3px 3px 0 #FF9F1C7c;
+}
+
+.error.bordered-like {
+  border: 2px solid transparent;
+  box-shadow: 3px 3px 0 transparent;
+}
+
+button.bordered {
+  background-color: #D91734;
+  border: 1px solid #D91734;
+}
+
+button.bordered:hover {
+  background-color: #011627;
+  box-shadow: 4px 4px 0 #D917347c;
+  border-color: #D91734;
+  color: #D91734;
+}
+
+button.error.bordered {
+  background-color: #FF9F1C;
+  border: 1px solid #FF9F1C;
+}
+
+button.error.bordered:hover {
+  background-color: #011627;
+  box-shadow: 4px 4px 0 #FF9F1C7c;
+  border-color: #FF9F1C;
+  color: #FF9F1C;
+}
+
 .canvas {
   width: 100%;
   height: 100%;
@@ -27,18 +71,18 @@ body {
   align-items: center;
 }
 
-.url-form {
+.url-form-container {
   width: 60vw;
   height: 130px;
-  /* height: 80vh; */
   background-color: #031D2D;
 
-  margin-top: 30vw;
-
+  margin-top: 36vh;
 
   padding: 20px;
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+}
 
+.url-form {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
@@ -81,14 +125,38 @@ body {
   color: #010F1A;
   background-color: #D91734;
   border: 1px solid #D91734;
-  /* box-shadow: 6px 6px 0 #D91734; */
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.url-form button:hover {
-  background-color: #011627;
-  box-shadow: 4px 4px 0 #D917347c;
-  border-color: #D91734;
-  color: #D91734;
+.dl-status-contaier {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.dl-status-contaier .label {
+  font-size: 24px;
+}
+
+.dl-status-contaier .message  {
+  margin-top: 10px;
+  margin-bottom: 14px;
+  width: 80%;
+  padding: 10px 15px;
+  font-size: 16px;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.dl-status-contaier button {
+  padding: 2px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  color: #010F1A;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }

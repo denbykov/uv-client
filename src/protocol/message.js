@@ -89,8 +89,13 @@ export async function parseMessage(lastMessage) {
   if (preParsedMessage.header.type == types.Error) {
     const json = new TextDecoder().decode(preParsedMessage.payload);
     const payload = JSON.parse(json);
-    return preParsedMessage.payload = payload;
+    preParsedMessage.payload = payload;
+    return preParsedMessage;
   }
 
   throw new Error("Failed to parse backend message");
 }
+
+export {
+  types,
+};

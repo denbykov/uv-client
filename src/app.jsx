@@ -10,6 +10,20 @@ import * as protocol from './protocol/message';
 
 const backendUrl = "ws://localhost:3080/ws"
 
+class DownloadingState {
+  constructor() {
+    this.percentage = 0;
+    this.error = null;
+    this.done = false;
+  }
+
+  copy(other) {
+    this.percentage = other.percentage;
+    this.error = other.error;
+    this.done = other.done;
+  }
+}
+
 function Application() {
   const { sendMessage, lastMessage, readyState } = 
     useWebSocket(backendUrl,
@@ -18,6 +32,8 @@ function Application() {
         shouldReconnect: () => false,
       },
     );
+  
+  const [dlState, setDlState] = useState(null);
 
   useEffect(() => {
     const connectionStatus = {
@@ -41,11 +57,25 @@ function Application() {
 
     const handleMessage = async(lastMessage) => {
       const message = await protocol.parseMessage(lastMessage);
-      console.log(message);
+
+      if (message.header.type === protocol.types.Error) {
+        setDlState((prev) => {
+          const state = new DownloadingState();
+
+          if (prev !== null) {
+            state.copy(prev);
+          }
+          
+          state.error = message.payload.reason;
+          return state;
+        });
+      }
     };
 
     handleMessage(lastMessage);
   }, [lastMessage]);
+
+  console.log(dlState);
 
   const download = useCallback(
     function(formData) {
@@ -56,17 +86,37 @@ function Application() {
     }
   );
 
-  return (
-  <>
-  <div className="canvas">
-    <form action={download} className="url-form">
-      <label>Enter URL</label>
-      <input name="url"></input>
-      <button type="submit">Donwload</button>
-    </form>
-  </div>
-  </> 
-  );
+  if (dlState === null) {
+    return (
+      <>
+      <div className="canvas">
+        <div className="url-form-container">
+          <form action={download} className="url-form">
+            <label>Enter URL</label>
+            <input name="url"></input>
+            <button className="bordered" type="submit">Donwload</button>
+          </form>
+        </div>
+      </div>
+      </>
+    );
+  }  
+
+  if (dlState.error !== null) {
+    return (
+      <>
+      <div className="canvas">
+        <div className="url-form-container">
+          <div className="dl-status-contaier">
+            <div className="error label">Error</div>
+            <div className="error message bordered-like">{dlState.error}</div>
+            <button className="bordered error confirm" onClick={() => setDlState(null)}>Continue</button>
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  }
 }
 
 const root = createRoot(document.body)
