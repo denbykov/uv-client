@@ -93,6 +93,17 @@ export async function parseMessage(lastMessage) {
     return preParsedMessage;
   }
 
+  if (preParsedMessage.header.type == types.DownloadingProgress) {
+    const json = new TextDecoder().decode(preParsedMessage.payload);
+    const payload = JSON.parse(json);
+    preParsedMessage.payload = payload;
+    return preParsedMessage;
+  }
+
+  if (preParsedMessage.header.type == types.Done) {
+    return preParsedMessage;
+  }
+
   throw new Error("Failed to parse backend message");
 }
 

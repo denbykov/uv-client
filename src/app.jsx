@@ -4,7 +4,6 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-// import randomUUID from 'crypto';
 
 import * as protocol from './protocol/message';
 
@@ -57,7 +56,6 @@ function Application() {
 
     const handleMessage = async(lastMessage) => {
       const message = await protocol.parseMessage(lastMessage);
-
       if (message.header.type === protocol.types.Error) {
         setDlState((prev) => {
           const state = new DownloadingState();
@@ -69,6 +67,30 @@ function Application() {
           state.error = message.payload.reason;
           return state;
         });
+      } else if (message.header.type === protocol.types.DownloadingProgress) {
+        setDlState((prev) => {
+          const state = new DownloadingState();
+
+          if (prev !== null) {
+            state.copy(prev);
+          }
+          
+          state.percentage = message.payload.percentage;
+          return state;
+        });
+      } else if (message.header.type === protocol.types.Done) {
+        setDlState((prev) => {
+          const state = new DownloadingState();
+
+          if (prev !== null) {
+            state.copy(prev);
+          }
+          
+          state.done = true;
+          return state;
+        });
+      } else {
+        console.log(`unable to handle message: ${message}`);
       }
     };
 
@@ -110,7 +132,27 @@ function Application() {
           <div className="dl-status-contaier">
             <div className="error label">Error</div>
             <div className="error message bordered-like">{dlState.error}</div>
-            <button className="bordered error confirm" onClick={() => setDlState(null)}>Continue</button>
+            <button className="bordered error" onClick={() => setDlState(null)}>Continue</button>
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  }
+
+  if (dlState.percentage !== null) {
+    const percentage = dlState.percentage.toFixed(0) + "%";
+    return (
+      <>
+      <div className="canvas">
+        <div className="url-form-container">
+          <div className="dl-status-contaier">
+            <div className="label">Downloading</div>
+            <div className="message bordered progress-bar-container">
+              <div className="progress-percentage">{percentage}</div>
+              <div className="progress-bar" style={{width: percentage}}></div>
+            </div>
+            <button className="bordered" onClick={() => setDlState(null)}>Cancel</button>
           </div>
         </div>
       </div>

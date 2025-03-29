@@ -28,6 +28,11 @@ body {
   color: #FF9F1C;
 }
 
+.bordered {
+  border: 2px solid #D91734;
+  box-shadow: 3px 3px 0 #D917347c;
+}
+
 .error.bordered {
   border: 2px solid #FF9F1C;
   box-shadow: 3px 3px 0 #FF9F1C7c;
@@ -140,7 +145,7 @@ button.error.bordered:hover {
   font-size: 24px;
 }
 
-.dl-status-contaier .message  {
+.dl-status-contaier .message {
   margin-top: 10px;
   margin-bottom: 14px;
   width: 80%;
@@ -159,4 +164,25 @@ button.error.bordered:hover {
   color: #010F1A;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.progress-bar-container {
+  position: relative;
+  background-color: #010F1A;
+}
+
+.progress-bar {
+  height: 24px;
+  background-color: #D91734;
+}
+
+.progress-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.dl-status-contaier .progress-bar-container {
+  padding: 6px 15px;
 }
