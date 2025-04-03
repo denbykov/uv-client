@@ -174,6 +174,7 @@ button.error.bordered:hover {
 .progress-bar {
   height: 24px;
   background-color: #D91734;
+  transition: all 0.2s ease;
 }
 
 .progress-percentage {
@@ -184,5 +185,5 @@ button.error.bordered:hover {
 }
 
 .dl-status-contaier .progress-bar-container {
-  padding: 6px 15px;
+  padding: 8px 15px;
 }
