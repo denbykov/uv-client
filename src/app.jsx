@@ -28,7 +28,11 @@ function Application() {
     useWebSocket(backendUrl,
       {
         share: false,
-        shouldReconnect: () => false,
+        shouldReconnect: (closeEvent) => {
+          console.warn("WebSocket Closed:", closeEvent.code, closeEvent.reason);
+          return false;
+        },
+        heartbeat: true,
       },
     );
   
