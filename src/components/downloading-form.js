@@ -144,8 +144,33 @@ export function DownloadingForm() {
     );
   }
 
-  if (dlState.percentage !== null) {
+  if (dlState.done === true) {
     const percentage = dlState.percentage.toFixed(0) + "%";
+    return (
+      <>
+      <div className="canvas">
+        <div className="url-form-container">
+          <div className="dl-status-contaier">
+            <div className="label">Downloading</div>
+            <div className="message bordered progress-bar-container">
+              <div className="progress-percentage">{percentage}</div>
+              <div className="progress-bar" style={{width: percentage}}></div>
+            </div>
+            <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  }
+
+  if (dlState.percentage !== null) {
+    var percentageValue = dlState.percentage.toFixed(0);
+    console.log(percentageValue);
+    if (percentageValue == 100) {
+      percentageValue = 99;
+    }
+    const percentage = percentageValue + "%";
     return (
       <>
       <div className="canvas">
