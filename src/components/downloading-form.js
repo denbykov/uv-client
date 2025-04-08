@@ -154,7 +154,7 @@ export function DownloadingForm() {
             <div className="label">Downloading</div>
             <div className="message bordered progress-bar-container">
               <div className="progress-percentage">{percentage}</div>
-              <div className="progress-bar" style={{width: percentage}}></div>
+              <div className="static-progress-bar" style={{width: percentage}}></div>
             </div>
             <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
           </div>
@@ -178,8 +178,10 @@ export function DownloadingForm() {
           <div className="dl-status-contaier">
             <div className="label">Downloading</div>
             <div className="message bordered progress-bar-container">
+              <div className="progress-bar" style={{width: percentage}}>
+                <div className="progress-animation"></div>
+              </div>
               <div className="progress-percentage">{percentage}</div>
-              <div className="progress-bar" style={{width: percentage}}></div>
             </div>
             <button className="bordered" onClick={() => cancel()}>Cancel</button>
           </div>
