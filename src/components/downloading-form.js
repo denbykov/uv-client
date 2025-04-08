@@ -11,12 +11,14 @@ class DownloadingState {
     this.percentage = 0;
     this.error = null;
     this.done = false;
+    this.uuid = null;
   }
 
   copy(other) {
     this.percentage = other.percentage;
     this.error = other.error;
     this.done = other.done;
+    this.uuid = other.uuid;
   }
 }
 
@@ -25,7 +27,15 @@ export function DownloadingForm() {
   const [dlState, setDlState] = useState(null);
 
   useEffect(() => {
-    if (lastMessage == null) {
+    if (dlState === null) {
+      return;
+    }
+
+    if (dlState === null && dlState.uuid !== lastMessage.header.uuid) {
+      return;
+    }
+
+    if (lastMessage === null) {
       return;
     }
 
@@ -74,17 +84,31 @@ export function DownloadingForm() {
 
   const download = useCallback(
     function(formData) {
-      const url = formData.get("url");
+      if (dlState !== null) {
+        console.log.Error("Downloading state already esists!");
+        return;
+      }
 
-      const request = protocol.buildDownloadingRequest(protocol.uuidv4(), url);
+      const state = new DownloadingState();
+      state.uuid = protocol.uuidv4();
+      setDlState(state);
+
+      const url = formData.get("url");
+      const request = protocol.buildDownloadingRequest(state.uuid, url);
       sendMessage(request.serialize(), [])
     }
   );
 
   const cancel = useCallback(
     function() {
-      // const request = protocol.buildDownloadingRequest(protocol.uuidv4(), url);
-      // sendMessage(request.serialize(), [])
+      if (dlState === null) {
+        console.log.Error("Downloading state does not esist!");
+        return;
+      }
+      const request = protocol.buildCancelRequest(dlState.uuid);
+      sendMessage(request.serialize(), []);
+
+      setDlState(null);
     }
   );
 
@@ -132,7 +156,7 @@ export function DownloadingForm() {
               <div className="progress-percentage">{percentage}</div>
               <div className="progress-bar" style={{width: percentage}}></div>
             </div>
-            <button className="bordered" onClick={() => setDlState(null)}>Cancel</button>
+            <button className="bordered" onClick={() => cancel()}>Cancel</button>
           </div>
         </div>
       </div>

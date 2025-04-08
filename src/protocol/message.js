@@ -81,6 +81,16 @@ export function buildDownloadingRequest(uuid, url) {
   )
 }
 
+export function buildCancelRequest(uuid) {
+  return new Message(
+    new Header(
+      types.CancelRequest,
+      uuid,
+    ),
+    {},
+  )
+}
+
 export async function parseMessage(lastMessage) {
   const dataBuffer = await lastMessage.data.arrayBuffer();
   const data = new Uint8Array(dataBuffer);
