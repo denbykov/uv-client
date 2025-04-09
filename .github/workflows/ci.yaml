@@ -31,7 +31,7 @@ jobs:
         run: go build -v ./cmd/build_packet
 
       - name: Generate protocol/types.js file
-        run: build_packet.exe export-type ./src/protocol
+        run: ./uv-server/build_packet.exe export-type ./src/protocol
 
       - name: Setup Node
         uses: actions/setup-node@v4
