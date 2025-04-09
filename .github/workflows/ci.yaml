@@ -28,7 +28,7 @@ jobs:
         working-directory: uv-server
 
       - name: Build build_packet utility
-        run: go build -v ./uv-server/cmd/build_packet
+        run: go build -v ./cmd/build_packet
 
       - name: Generate protocol/types.js file
         run: build_packet.exe export-type ./src/protocol
