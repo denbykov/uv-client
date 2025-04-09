@@ -1,0 +1,3 @@
+[submodule "uv-server"]
+	path = uv-server
+	url = https://github.com/denbykov/uv-server

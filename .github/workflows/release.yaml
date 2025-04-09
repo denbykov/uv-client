@@ -15,6 +15,24 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '^1.23.4'
+        cache: true
+    
+    - name: Install dependencies
+      run: go mod download
+      working-directory: uv-server
+
+    - name: Build build_packet utility
+      run: go build -v ./uv-server/cmd/build_packet
+
+    - name: Generate protocol/types.js file
+      run: build_packet.exe export-type C:\Users\jerki\workspace\projects\uv-client\src\protocol
 
     - name: Setup Node
       uses: actions/setup-node@v4
