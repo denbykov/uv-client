@@ -13,33 +13,32 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-      
-      - name: Install dependencies
-        run: npm install
-      
-      - name: Build
-        run: npm run package
-      
-      - name: Create distribution directory
-        run: mkdir client
-      
-      - name: Move artifacts to the disrtibution directory
-        run: mv out/uv-client-win32-x64/* client
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Build
+      run: npm run package
+    
+    - name: Create distribution directory
+      run: mkdir client
+    
+    - name: Move artifacts to the disrtibution directory
+      run: mv out/uv-client-win32-x64/* client
 
-      - name: Package distribution directory
-        run: |
-          Compress-Archive -LiteralPath .\client -DestinationPath client.zip
-      
-      - name: Create release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifacts: "client.zip"
+    - name: Package distribution directory
+      run: |
+        Compress-Archive -LiteralPath .\client -DestinationPath client.zip
+    
+    - name: Create release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: "client.zip"
