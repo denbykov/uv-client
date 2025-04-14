@@ -51,7 +51,7 @@ jobs:
     - name: Move artifacts to the disrtibution directory
       run: mv out/uv-client-win32-x64/* client
 
-    - name: Package distribution directory
+    - name: Package distribution directory3
       run: |
         Compress-Archive -LiteralPath .\client -DestinationPath client.zip
     

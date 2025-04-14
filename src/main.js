@@ -1,6 +1,7 @@
 "use strict"
 
 const { app, BrowserWindow , session} = require('electron');
+const isDev = require('electron-is-dev');
 const path = require('node:path');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -20,10 +21,10 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools({ mode: 'docked' });
-  // mainWindow.webContents.openDevTools({ mode: 'undocked' });
+  
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'docked' });
+  }
 };
 
 // This method will be called when Electron has finished
