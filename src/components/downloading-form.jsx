@@ -27,20 +27,17 @@ export function DownloadingForm() {
   const [dlState, setDlState] = useState(null);
 
   useEffect(() => {
-    if (dlState === null) {
-      return;
-    }
-
-    if (dlState === null && dlState.uuid !== lastMessage.header.uuid) {
-      return;
-    }
-
-    if (lastMessage === null) {
+    if (dlState === null || lastMessage === null) {
       return;
     }
 
     const handleMessage = async(lastMessage) => {
       const message = await protocol.parseMessage(lastMessage);
+
+      if (dlState.uuid !== message.header.uuid) {
+        return;
+      }
+
       if (message.header.type === protocol.types.Error) {
         setDlState((prev) => {
           const state = new DownloadingState();
