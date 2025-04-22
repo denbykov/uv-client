@@ -1,7 +1,7 @@
 "use strict"
 
 import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
@@ -48,102 +48,83 @@ class State {
   }
 }
 
+function loadFiles(stateRef, sendMessage) {
+  const state = stateRef.current;
+  state.uuid = protocol.uuidv4();
+
+  const request = protocol.buildGetFilesRequest(
+    state.uuid, state.pagination.limit, state.pagination.offset);
+
+  sendMessage(request.serialize(), []);
+}
+
+async function handleMessage(stateRef, setItems, lastMessage) {
+  if (lastMessage === null) {
+    return;
+  }
+
+  const state = stateRef.current;
+
+  const message = await protocol.parseMessage(lastMessage);
+  if (state.uuid !== message.header.uuid) {
+    console.log("Not my uuid!");
+    return;
+  }
+
+  if (message.header.type == protocol.types.GetFilesResponse) {
+    const newItems = message.payload.files;
+    setItems(newItems);
+
+    state.pagination.total = message.payload.total;
+    state.pagination.pagesLoaded += 1;
+  }
+  else if (message.header.type === protocol.types.Error) {
+    console.log(`failed to load files: ${message.payload.Reason}`);
+  } else {
+    console.log(`unable to handle message: ${message}`);
+  }
+}
+
+function handleScroll(stateRef, event) {
+  const scrollTop = event.currentTarget.scrollTop;
+  const offsetHeight = event.currentTarget.offsetHeight;
+  const scrollHeight = event.currentTarget.scrollHeight;
+
+  const state = stateRef.current;
+
+  if (state.pagination.total > 0 && state.scrolling.itemHeight == 0) {
+    state.scrolling.itemHeight = 
+      scrollHeight / 
+      Math.min(state.pagination.limit, state.pagination.total);
+
+    state.scrolling.pageHeight = state.scrolling.itemHeight * state.pagination.limit;
+  }
+
+  if (state.pagination.total > state.pagination.limit && state.pagination.pagesLoaded == 1) {
+    // loadFiles();
+  }
+
+  state.scrolling.scrollTop = scrollTop;
+  state.scrolling.offsetHeight = offsetHeight;
+
+  // console.log(scrollTop);
+  // console.log(offsetHeight);
+};
+
 export function FilesView() {
   const { lastMessage, sendMessage } = useWebSocketData();
-  const [state, setState] = useState(null);
+  const state = useRef(new State());
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    if (state === null || lastMessage === null) {
-      return;
-    }
-
-    const handleMessage = async(lastMessage) => {
-      const message = await protocol.parseMessage(lastMessage);
-      if (state.uuid !== message.header.uuid) {
-        console.log("Not mine uuid!");
-        return;
-      }
-
-      if (message.header.type == protocol.types.GetFilesResponse) {
-        const newItems = message.payload.files;
-        setItems(newItems);
-
-        const newState = structuredClone(state);
-        newState.pagination.total = message.payload.total;
-        newState.pagination.pagesLoaded += 1;
-        setState(newState);
-      }
-      else if (message.header.type === protocol.types.Error) {
-        console.log(`failed to load files: ${message.payload.Reason}`);
-      } else {
-        console.log(`unable to handle message: ${message}`);
-      }
-    };
-
-    handleMessage(lastMessage);
-  }, [lastMessage]);
-
-  const loadFiles = function() {
-    var newState = null;
-    if (state === null) {
-      newState = new State();
-      newState.uuid = protocol.uuidv4();
-    } else {
-      newState = structuredClone(state);
-      newState.copy(state);
-      newState.uuid = protocol.uuidv4();
-    }
-    setState(newState);
-    
-    const request = protocol.buildGetFilesRequest(
-      newState.uuid, newState.pagination.limit, newState.pagination.offset);
-    sendMessage(request.serialize(), []);
-  };
-
-  const handleScroll = function(event) {
-    const scrollTop = event.currentTarget.scrollTop;
-    const offsetHeight = event.currentTarget.offsetHeight;
-    const scrollHeight = event.currentTarget.scrollHeight;
-
-    setState(state => {
-      if (state === null) {
-        return state;
-      }
-  
-      const newState = structuredClone(state);
-  
-      if (state.pagination.total > 0 && state.scrolling.itemHeight == 0) {
-        newState.scrolling.itemHeight = 
-          scrollHeight / 
-          Math.min(state.pagination.limit, state.pagination.total);
-  
-        newState.scrolling.pageHeight = newState.scrolling.itemHeight * state.pagination.limit;
-      }
-  
-      if (state.pagination.total > state.pagination.limit && state.pagination.pagesLoaded == 1) {
-        // loadFiles();
-      }
-  
-      newState.scrolling.scrollTop = scrollTop;
-      newState.scrolling.offsetHeight = offsetHeight;
-  
-      console.log(scrollTop);
-      console.log(offsetHeight);
-      return newState;
-    });
-  };
-
-  useEffect(() => {
-    loadFiles();
-  }, []);
+  useEffect(() => {handleMessage(state, setItems, lastMessage)}, [lastMessage]);
+  useEffect(() => loadFiles(state, sendMessage), []);
 
   return (
     <>
       <div className="main-section">
         <div className="main sub-section">
         </div>
-        <div className="side sub-section scrollable" onScroll={handleScroll}>
+        <div className="side sub-section scrollable" onScroll={(event) => {handleScroll(state, event)}}>
           <ul>
             {items.map((item, index) => (
               <FileListItem key={item.id} index={index} item={item} />
