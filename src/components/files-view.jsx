@@ -35,7 +35,6 @@ class ScrollingData {
   constructor() {
     this.scrollTop = 0
     this.offsetHeight = 0
-    this.pageHeight = 0
     this.itemHeight = 0
   }
 }
@@ -46,16 +45,6 @@ class State {
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
   }
-}
-
-function loadFiles(stateRef, sendMessage) {
-  const state = stateRef.current;
-  state.uuid = protocol.uuidv4();
-
-  const request = protocol.buildGetFilesRequest(
-    state.uuid, state.pagination.limit, state.pagination.offset);
-
-  sendMessage(request.serialize(), []);
 }
 
 async function handleMessage(stateRef, setItems, lastMessage) {
@@ -79,10 +68,26 @@ async function handleMessage(stateRef, setItems, lastMessage) {
     state.pagination.pagesLoaded += 1;
   }
   else if (message.header.type === protocol.types.Error) {
-    console.log(`failed to load files: ${message.payload.Reason}`);
+    console.log(`failed to load files: ${message.payload.reason}`);
   } else {
     console.log(`unable to handle message: ${message}`);
   }
+}
+
+function loadPage(stateRef, sendMessage, page) {
+  if (page !== 0 && (page > 1 || page < -1)) {
+    throw new Error("Page argument should be in range [-1, 1]");
+  }
+
+  const state = stateRef.current;
+  state.uuid = protocol.uuidv4();
+
+  state.pagination.offset += state.pagination.limit * page;
+
+  const request = protocol.buildGetFilesRequest(
+    state.uuid, state.pagination.limit, state.pagination.offset);
+
+  sendMessage(request.serialize(), []);
 }
 
 function handleScroll(stateRef, event) {
@@ -96,13 +101,11 @@ function handleScroll(stateRef, event) {
     state.scrolling.itemHeight = 
       scrollHeight / 
       Math.min(state.pagination.limit, state.pagination.total);
-
-    state.scrolling.pageHeight = state.scrolling.itemHeight * state.pagination.limit;
   }
 
-  if (state.pagination.total > state.pagination.limit && state.pagination.pagesLoaded == 1) {
-    // loadFiles();
-  }
+  // if (state.pagination.total > state.pagination.limit && state.pagination.pagesLoaded == 1) {
+  //   // loadPage();
+  // }
 
   state.scrolling.scrollTop = scrollTop;
   state.scrolling.offsetHeight = offsetHeight;
@@ -117,7 +120,7 @@ export function FilesView() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {handleMessage(state, setItems, lastMessage)}, [lastMessage]);
-  useEffect(() => loadFiles(state, sendMessage), []);
+  useEffect(() => loadPage(state, sendMessage, 0), []);
 
   return (
     <>
