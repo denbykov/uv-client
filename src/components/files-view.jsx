@@ -23,7 +23,7 @@ function FileListItem({ index, item }) {
 
 class PaginationData {
   constructor() {
-    this.limit = 6
+    this.limit = 12
     this.offset = 0
     this.total = 0
 
@@ -39,16 +39,16 @@ class PaginationData {
 
 class ScrollingData {
   constructor() {
-    this.scrollTopOffset = 0
     this.itemHeight = 0
     this.pageHeight = 0
   }
 }
 
 class CurrentRequest {
-  constructor(uuid, page) {
+  constructor(uuid, page, continuation) {
     this.uuid = uuid;
     this.page = page;
+    this.continuation = continuation;
   }
 }
 
@@ -76,11 +76,11 @@ export function FilesView() {
       if (pagination.previousPage !== null) {
         items = items.concat(pagination.previousPage);
       }
-
+      
       if (pagination.currentPage !== null) {
         items = items.concat(pagination.currentPage);
       }
-
+      
       if (pagination.nextPage !== null) {
         items = items.concat(pagination.nextPage);
       }
@@ -105,18 +105,21 @@ export function FilesView() {
         pagination.previousPage = newItems;
       } else if (state.currentRequest.page == 0) {
         pagination.currentPage = newItems;
-
-        const nextPageAvailable = pagination.offset + pagination.limit < pagination.total;
-        if (state.pagination.nextPage === null && nextPageAvailable) {
-          loadPage(+1);
-        }
       } else if (state.currentRequest.page == 1) {
         pagination.nextPage = newItems;
       }
 
       updateItems();
+
+      const continuation = state.currentRequest.continuation;
     
       state.pagination.pagesLoaded += 1;
+      state.currentRequest = null;
+
+      if (typeof continuation !== 'undefined' && continuation !== null) {
+        console.log("Executing handle files message continuation")
+        continuation();
+      }
     },
     []
   );
@@ -128,6 +131,11 @@ export function FilesView() {
       }
     
       const state = stateRef.current;
+
+      if (state.currentRequest === null) {
+        console.log("have no request");
+        return;
+      }
     
       const message = await protocol.parseMessage(lastMessage);
       if (state.currentRequest.uuid !== message.header.uuid) {
@@ -148,10 +156,14 @@ export function FilesView() {
   );
   
   const loadPage = useCallback(
-    function (page) {
+    function (page, continuation) {
       console.log(`load page(${page})`);
 
       const state = stateRef.current;
+
+      if (state.currentRequest !== null) {
+        throw new Error("unable to do paralel requests");
+      }
 
       if (page !== 0 && (page > 1 || page < -1)) {
         throw new Error("page argument should be in range [-1, 1]");
@@ -169,7 +181,7 @@ export function FilesView() {
         throw new Error("next page already loaded");
       }
     
-      state.currentRequest = new CurrentRequest(protocol.uuidv4(), page);
+      state.currentRequest = new CurrentRequest(protocol.uuidv4(), page, continuation);
     
       const offset = state.pagination.offset + state.pagination.limit * page;
       const total = state.pagination.total;
@@ -184,6 +196,17 @@ export function FilesView() {
     },
     []
   );
+
+  const loadNextPageIfAwailable = useCallback(
+    function() {
+      const state = stateRef.current;
+      const pagination = state.pagination;
+
+      const nextPageAvailable = pagination.offset + pagination.limit < pagination.total;
+      if (nextPageAvailable) {
+        loadPage(+1);
+      }
+    });
   
   const handleScroll = useCallback(
     function(event) {
@@ -200,76 +223,119 @@ export function FilesView() {
         scrolling.pageHeight = scrolling.itemHeight * pagination.limit;
       }
 
+      if (state.currentRequest !== null) {
+        return;
+      }
+
+      if (scrolling.pageHeight < offsetHeight) {
+        throw Error("current scrolling implementation requires offset height to be larger than page height");
+      }
+
       const twoNextPagesAvailable = pagination.offset + pagination.limit * 2 < pagination.total;
-
-      if (scrollTop - scrolling.scrollTopOffset >= scrolling.pageHeight && pagination.previousPage === null) {
-        scrolling.scrollTopOffset += scrolling.pageHeight;
-        
-        pagination.previousPage = pagination.currentPage;
-        pagination.currentPage = pagination.nextPage;
-        pagination.offset += pagination.limit;
-        pagination.nextPage = null;
-        
-        loadPage(+1);
-        return;
-      }
+      const twoPreviousPagesAvailable = 
+        (pagination.offset - pagination.limit * 2 >= 0) && 
+        (pagination.offset - pagination.limit * 2 < pagination.total);
       
-      if (scrollTop - scrolling.scrollTopOffset >= scrolling.pageHeight && twoNextPagesAvailable) {
-        pagination.previousPage = pagination.currentPage;
-        pagination.currentPage = pagination.nextPage;
-        pagination.offset += pagination.limit;
-        pagination.nextPage = null;
+      const atBeginning = pagination.previousPage === null;
+      const atEnd = pagination.nextPage === null;
+      const inMiddle = !(atBeginning || atEnd) ;
+      
+      if (atBeginning) {
+        if (scrollTop >= scrolling.pageHeight && twoNextPagesAvailable) {
+          pagination.previousPage = pagination.currentPage;
+          pagination.currentPage = pagination.nextPage;
+          pagination.offset += pagination.limit;
+          pagination.nextPage = null;
+          
+          loadPage(+1);
+          return;
+        }
+  
+        if (scrollTop >= scrolling.pageHeight && !twoNextPagesAvailable) {
+          pagination.previousPage = pagination.currentPage;
+          pagination.currentPage = pagination.nextPage;
+          pagination.offset += pagination.limit;
+          pagination.nextPage = null;
 
-        loadPage(+1);
+          updateItems();
+          return;
+        }
+
         return;
       }
 
-      if (scrollTop - scrolling.scrollTopOffset >= scrolling.pageHeight - offsetHeight 
-          && !twoNextPagesAvailable 
-          && pagination.nextPage !== null) {
-        console.log("Tada!");
-        pagination.previousPage = pagination.currentPage;
-        pagination.currentPage = pagination.nextPage;
-        pagination.offset += pagination.limit;
-        pagination.nextPage = null;
+      if (inMiddle) {
+        if (scrollTop + offsetHeight == scrollHeight) {
+          pagination.previousPage = pagination.currentPage;
+          pagination.currentPage = pagination.nextPage;
+          pagination.offset += pagination.limit;
+          pagination.nextPage = null;
 
-        updateItems();
+          updateItems();
+          return;
+        }
+
+        if (scrollTop >= scrolling.pageHeight * 2 && !twoNextPagesAvailable) {
+          pagination.previousPage = pagination.currentPage;
+          pagination.currentPage = pagination.nextPage;
+          pagination.offset += pagination.limit;
+          pagination.nextPage = null;
+
+          updateItems();
+          return;
+        }
+
+        if (scrollTop >= scrolling.pageHeight * 2 && twoNextPagesAvailable) {
+          pagination.previousPage = pagination.currentPage;
+          pagination.currentPage = pagination.nextPage;
+          pagination.offset += pagination.limit;
+          pagination.nextPage = null;
+          
+          loadPage(+1);
+          return;
+        }
+
+        if (scrollTop <= scrolling.pageHeight && twoPreviousPagesAvailable) {
+          pagination.nextPage = pagination.currentPage;
+          pagination.currentPage = pagination.previousPage;
+          pagination.offset -= pagination.limit;
+          pagination.previousPage = null;
+          
+          loadPage(-1);
+          return;
+        }
+
+        if (scrollTop <= scrolling.pageHeight && !twoPreviousPagesAvailable) {
+          pagination.nextPage = pagination.currentPage;
+          pagination.currentPage = pagination.previousPage;
+          pagination.offset -= pagination.limit;
+          pagination.previousPage = null;
+          
+          updateItems();
+          return;
+        }
+
         return;
       }
 
-      if (scrollTop - scrolling.scrollTopOffset < scrolling.pageHeight && pagination.nextPage === null) {
-        // scrolling.scrollTopOffset += scrolling.pageHeight;
-        
-        pagination.previousPage = pagination.currentPage;
-        pagination.currentPage = pagination.nextPage;
-        pagination.offset += pagination.limit;
-        pagination.nextPage = null;
-        
-        loadPage(+1);
+      if (atEnd) {
+        const scrollBottom = scrollTop + offsetHeight;
+
+        const lastPageSize = pagination.total - pagination.offset;
+        const lastPageHeight = lastPageSize * scrolling.itemHeight;
+
+        if (scrollBottom <= scrollHeight - lastPageHeight) {
+          pagination.nextPage = pagination.currentPage;
+          pagination.currentPage = pagination.previousPage;
+          pagination.offset -= pagination.limit;
+          pagination.previousPage = null;
+          
+          loadPage(-1);
+          return;
+        }
+
         return;
       }
-
-      Todo: get rid of scrolling.scrollTopOffset!
-
-      // if (scrollTop - scrolling.scrollTopOffset >= scrolling.pageHeight && nextPageAvailable) {
-      //   console.log(nextPageAvailable);
-      //   pagination.previousPage = pagination.currentPage;
-      //   pagination.currentPage = pagination.nextPage;
-      //   pagination.nextPage = null;
-
-      //   loadPage(+1);
-      //   return;
-      // }
-
-      // if (scrollTop - scrolling.scrollTopOffset <= 0) {
-      //   pagination.previousPage = pagination.currentPage;
-      //   pagination.currentPage = pagination.nextPage;
-      //   pagination.nextPage = null;
-
-      //   loadPage(-1);
-
-      //   return;
-      // }
     },
     []
   );
@@ -277,7 +343,7 @@ export function FilesView() {
   // Effects
 
   useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
-  useEffect(() => loadPage(0), []);
+  useEffect(() => loadPage(0, loadNextPageIfAwailable), []);
 
   // Rendering
 
