@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
+import { DownloadingForm } from './downloading-form.jsx';
 
 function FileListItem({ index, item }) {
   return (
@@ -166,7 +167,6 @@ export function FilesView() {
       const state = stateRef.current;
 
       if (state.currentRequest === null) {
-        console.log("have no request");
         return;
       }
     
@@ -237,7 +237,8 @@ export function FilesView() {
       if (nextPageAvailable) {
         loadPage(+1);
       }
-    });
+    }
+  );
   
   const handleScroll = useCallback(
     function(event) {
@@ -379,6 +380,11 @@ export function FilesView() {
     []
   );
 
+  const onAddItem = useCallback(
+    function() {
+    }
+  );
+
   // Effects
 
   useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
@@ -390,9 +396,15 @@ export function FilesView() {
     <>
       <div className="view">
         <div className="main sub-view">
+          <DownloadingForm/>
         </div>
         <div className="side sub-view file-list">
-          <div className="header">Hello fresh</div>
+          <div className="header">
+            <div>
+              Nothing yet
+            </div>
+            <button className="add-item bordered" onClick={onAddItem}>+</button>
+          </div>
           <div className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
               {items.displayedItems.map((item, index) => (

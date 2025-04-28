@@ -112,14 +112,12 @@ export function DownloadingForm() {
   if (dlState === null) {
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <form action={download} className="url-form">
-            <label>Enter URL</label>
-            <input name="url"></input>
-            <button className="bordered" type="submit">Donwload</button>
-          </form>
-        </div>
+      <div className="url-form-container">
+        <form action={download} className="url-form">
+          <label>Enter URL</label>
+          <input name="url"></input>
+          <button className="bordered" type="submit">Donwload</button>
+        </form>
       </div>
       </>
     );
@@ -128,13 +126,11 @@ export function DownloadingForm() {
   if (dlState.error !== null) {
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="error label">Error</div>
-            <div className="error message bordered-like">{dlState.error}</div>
-            <button className="bordered error" onClick={() => setDlState(null)}>Continue</button>
-          </div>
+      <div className="url-form-container">
+        <div className="dl-status-contaier">
+          <div className="error label">Error</div>
+          <div className="error message bordered-like">{dlState.error}</div>
+          <button className="bordered error" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -145,16 +141,14 @@ export function DownloadingForm() {
     const percentage = dlState.percentage.toFixed(0) + "%";
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="label">Downloading</div>
-            <div className="message bordered progress-bar-container">
-              <div className="progress-percentage">{percentage}</div>
-              <div className="static-progress-bar" style={{width: percentage}}></div>
-            </div>
-            <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
+      <div className="url-form-container">
+        <div className="dl-status-contaier">
+          <div className="label">Downloading</div>
+          <div className="message bordered progress-bar-container">
+            <div className="progress-percentage">{percentage}</div>
+            <div className="static-progress-bar" style={{width: percentage}}></div>
           </div>
+          <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -163,25 +157,22 @@ export function DownloadingForm() {
 
   if (dlState.percentage !== null) {
     var percentageValue = dlState.percentage.toFixed(0);
-    console.log(percentageValue);
     if (percentageValue == 100) {
       percentageValue = 99;
     }
     const percentage = percentageValue + "%";
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="label">Downloading</div>
-            <div className="message bordered progress-bar-container">
-              <div className="progress-bar" style={{width: percentage}}>
-                <div className="progress-animation"></div>
-              </div>
-              <div className="progress-percentage">{percentage}</div>
+      <div className="url-form-container">
+        <div className="dl-status-contaier">
+          <div className="label">Downloading</div>
+          <div className="message bordered progress-bar-container">
+            <div className="progress-bar" style={{width: percentage}}>
+              <div className="progress-animation"></div>
             </div>
-            <button className="bordered" onClick={() => cancel()}>Cancel</button>
+            <div className="progress-percentage">{percentage}</div>
           </div>
+          <button className="bordered" onClick={() => cancel()}>Cancel</button>
         </div>
       </div>
       </>

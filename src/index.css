@@ -55,7 +55,7 @@ button.bordered {
 }
 
 button.bordered:hover {
-  background-color: #011627;
+  background-color: #172220;
   box-shadow: 4px 4px 0 #D917347c;
   border-color: #D91734;
   color: #D91734;
@@ -67,30 +67,20 @@ button.error.bordered {
 }
 
 button.error.bordered:hover {
-  background-color: #011627;
+  background-color: #172220;
   box-shadow: 4px 4px 0 #FF9F1C7c;
   border-color: #FF9F1C;
   color: #FF9F1C;
 }
 
-.canvas {
-  width: 100%;
-  height: 100%;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .url-form-container {
   width: 60vw;
   height: 130px;
-  background-color: #031D2D;
 
-  margin-top: 36vh;
+  border-top: 2px solid #1C3632;
+  border-bottom: 2px solid #1C3632;
 
   padding: 20px;
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 .url-form {
@@ -123,7 +113,7 @@ button.error.bordered:hover {
 }
 
 .url-form input:focus {
-  background-color: #010F1A;
+  background-color: #172220;
   box-shadow: 6px 6px 0 #D917347c;
   border-color: #D91734;
   color: #D91734;
@@ -133,7 +123,7 @@ button.error.bordered:hover {
   padding: 2px 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 24px;
-  color: #010F1A;
+  color: #172220;
   background-color: #D91734;
   border: 1px solid #D91734;
   cursor: pointer;
@@ -167,14 +157,14 @@ button.error.bordered:hover {
   padding: 2px 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 24px;
-  color: #010F1A;
+  color: #172220;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .progress-bar-container {
   position: relative;
-  background-color: #010F1A;
+  background-color: #172220;
 }
 
 .static-progress-bar {
@@ -241,6 +231,10 @@ button.error.bordered:hover {
 .main.sub-view {
   width: 100%;
   flex: 4;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .side.sub-view {
@@ -258,7 +252,23 @@ button.error.bordered:hover {
   margin-bottom: 4px;
   flex-shrink: 0;
   flex-grow: 0;
-  border-bottom: 2px solid #204A44;
+  border-bottom: 2px solid #1C3632;
+
+  font-family: 'Orbitron', sans-serif;
+  
+  display: flex;
+  justify-content: space-between;
+}
+
+button.add-item {
+  font-size: 20px;
+  height: 26px;
+  width: 26px;
+  box-shadow: none;
+}
+
+button.add-item:hover {
+  box-shadow: none;
 }
 
 .file-list .body {
@@ -271,7 +281,7 @@ button.error.bordered:hover {
   height: 20px;
   flex-shrink: 0;
   flex-grow: 0;
-  border-top: 2px solid #204A44;
+  border-top: 2px solid #1C3632;
 
   font-family: 'Orbitron', sans-serif;
   text-align: right;
