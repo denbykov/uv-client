@@ -6,25 +6,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingForm } from './downloading-form.jsx';
-
-function FileListItem({ index, item }) {
-  return (
-    <>
-      <li>
-        <div className='file-list-item' key={index}>
-          <div>{item.id}</div>
-          <div>{item.source}</div>
-          <div>{item.status}</div>
-          <div>{item.addedAt}</div>
-        </div>
-      </li>
-    </>
-  );
-}
+import { FileListItem } from './file-list-item.jsx';
 
 class PaginationData {
   constructor() {
-    this.limit = 12
+    this.limit = 15
     this.offset = 0
     this.total = 0
 
@@ -56,6 +42,7 @@ class State {
     this.currentRequest = null;
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
+    this.downloadingsInProgess = [];
   }
 }
 
@@ -157,6 +144,28 @@ export function FilesView() {
     },
     []
   );
+
+  const actualizeDisplayedItems = useCallback(
+    function() {
+      const state = stateRef.current;
+      const pagination = state.pagination;
+
+      if (pagination.previousPage === null) {
+        pagination.currentPage = null;
+        pagination.nextPage = null;
+        loadPage(0, loadNextPageIfAwailable);
+      }
+      
+      if (pagination.offset === pagination.limit) {
+        pagination.previousPage = null;
+        loadPage(-1);
+
+        pagination.currentPage = null;
+        loadPage(0, loadNextPageIfAwailable);
+      }
+    },
+    []
+  );
   
   const handleMessage = useCallback(
     async function(lastMessage) {
@@ -165,24 +174,35 @@ export function FilesView() {
       }
     
       const state = stateRef.current;
-
-      if (state.currentRequest === null) {
-        return;
-      }
     
       const message = await protocol.parseMessage(lastMessage);
-      if (state.currentRequest.uuid !== message.header.uuid) {
-        console.log("Not my uuid!");
+      const uuid = message.header.uuid;
+    
+      if (message.header.type === protocol.types.GetFilesResponse) {
+        handleFilesMessage(message);
         return;
       }
-    
-      if (message.header.type == protocol.types.GetFilesResponse) {
-        handleFilesMessage(message);
+
+      if (message.header.type === protocol.types.DownloadingProgress) {
+        if (!state.downloadingsInProgess.includes(uuid)) {
+          state.downloadingsInProgess.push(uuid);
+          actualizeDisplayedItems();
+        }
+        return;
       }
-      else if (message.header.type === protocol.types.Error) {
+
+      if (message.header.type === protocol.types.Error && 
+          state.currentRequest !== null && 
+          state.currentRequest.uuid === uuid) {
         console.log(`failed to load files: ${message.payload.reason}`);
-      } else {
-        console.log(`unable to handle message: ${message}`);
+        return;
+      }
+
+      if (message.header.type === protocol.types.Error) {
+        if (state.downloadingsInProgess.includes(uuid)) {
+          state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
+          actualizeDisplayedItems();
+        }
       }
     },
     []

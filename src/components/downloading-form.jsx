@@ -5,22 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
-
-class DownloadingState {
-  constructor() {
-    this.percentage = 0;
-    this.error = null;
-    this.done = false;
-    this.uuid = null;
-  }
-
-  copy(other) {
-    this.percentage = other.percentage;
-    this.error = other.error;
-    this.done = other.done;
-    this.uuid = other.uuid;
-  }
-}
+import { DownloadingState } from './states/downloading-state';
 
 export function DownloadingForm() {
   const { lastMessage, sendMessage } = useWebSocketData();
