@@ -27,8 +27,6 @@ class PaginationData {
     this.offset = 0
     this.total = 0
 
-    this.pagesLoaded = 0
-
     this.previousPage = null
     this.currentPage  = null
     this.nextPage     = null
@@ -60,34 +58,71 @@ class State {
   }
 }
 
+class Items {
+  constructor() {
+    this.displayedItems = [];
+    this.total = 0;
+    this.currentPage = 0;
+    this.pageCount = 0;
+  }
+
+  copy = function(other) {
+    this.displayedItems = other.displayedItems;
+    this.total = other.total;
+    this.currentPage = other.currentPage;
+    this.pageCount = other.pageCount;
+  }
+}
+
 export function FilesView() {
   const { lastMessage, sendMessage } = useWebSocketData();
   const stateRef = useRef(new State());
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(new Items());
 
   // Methods
 
-  const updateItems = useCallback(
+  const updateDisplayedItems = useCallback(
     function() {
       const state = stateRef.current;
       const pagination = state.pagination;
 
-      var items = [];
+      var items = new Items();
       if (pagination.previousPage !== null) {
-        items = items.concat(pagination.previousPage);
+        items.displayedItems = items.displayedItems.concat(pagination.previousPage);
       }
       
       if (pagination.currentPage !== null) {
-        items = items.concat(pagination.currentPage);
+        items.displayedItems = items.displayedItems.concat(pagination.currentPage);
       }
       
       if (pagination.nextPage !== null) {
-        items = items.concat(pagination.nextPage);
+        items.displayedItems = items.displayedItems.concat(pagination.nextPage);
       }
 
-      state.pagination.itemsLoaded = items.length;
+      state.pagination.itemsLoaded = items.displayedItems.length;
+      items.total = pagination.total;
+      items.pageCount = Math.ceil(pagination.total / pagination.limit);
 
-      setItems(items);
+      setItems((prev) => {
+        if (prev.currentPage == 0) {
+          items.currentPage = 1;
+        } else {
+          items.currentPage = prev.currentPage;
+        }
+        return items;
+      });
+    },
+    []
+  );
+
+  const updateCurrentPageNumber = useCallback(
+    function(delta) {
+      setItems((prev) => {
+        var items = new Items();
+        items.copy(prev);
+        items.currentPage += delta;
+        return items;
+      });
     },
     []
   );
@@ -109,11 +144,9 @@ export function FilesView() {
         pagination.nextPage = newItems;
       }
 
-      updateItems();
+      updateDisplayedItems();
 
       const continuation = state.currentRequest.continuation;
-    
-      state.pagination.pagesLoaded += 1;
       state.currentRequest = null;
 
       if (typeof continuation !== 'undefined' && continuation !== null) {
@@ -157,8 +190,6 @@ export function FilesView() {
   
   const loadPage = useCallback(
     function (page, continuation) {
-      console.log(`load page(${page})`);
-
       const state = stateRef.current;
 
       if (state.currentRequest !== null) {
@@ -248,16 +279,18 @@ export function FilesView() {
           pagination.nextPage = null;
           
           loadPage(+1);
+          updateCurrentPageNumber(+1);
           return;
         }
-  
+        
         if (scrollTop >= scrolling.pageHeight && !twoNextPagesAvailable) {
           pagination.previousPage = pagination.currentPage;
           pagination.currentPage = pagination.nextPage;
           pagination.offset += pagination.limit;
           pagination.nextPage = null;
-
-          updateItems();
+          
+          updateDisplayedItems();
+          updateCurrentPageNumber(+1);
           return;
         }
 
@@ -271,7 +304,8 @@ export function FilesView() {
           pagination.offset += pagination.limit;
           pagination.nextPage = null;
 
-          updateItems();
+          updateDisplayedItems();
+          updateCurrentPageNumber(+1);
           return;
         }
 
@@ -281,7 +315,8 @@ export function FilesView() {
           pagination.offset += pagination.limit;
           pagination.nextPage = null;
 
-          updateItems();
+          updateDisplayedItems();
+          updateCurrentPageNumber(+1);
           return;
         }
 
@@ -292,6 +327,7 @@ export function FilesView() {
           pagination.nextPage = null;
           
           loadPage(+1);
+          updateCurrentPageNumber(+1);
           return;
         }
 
@@ -302,6 +338,7 @@ export function FilesView() {
           pagination.previousPage = null;
           
           loadPage(-1);
+          updateCurrentPageNumber(-1);
           return;
         }
 
@@ -311,7 +348,8 @@ export function FilesView() {
           pagination.offset -= pagination.limit;
           pagination.previousPage = null;
           
-          updateItems();
+          updateDisplayedItems();
+          updateCurrentPageNumber(-1);
           return;
         }
 
@@ -331,6 +369,7 @@ export function FilesView() {
           pagination.previousPage = null;
           
           loadPage(-1);
+          updateCurrentPageNumber(-1);
           return;
         }
 
@@ -349,15 +388,22 @@ export function FilesView() {
 
   return (
     <>
-      <div className="main-section">
-        <div className="main sub-section">
+      <div className="view">
+        <div className="main sub-view">
         </div>
-        <div className="side sub-section scrollable" onScroll={(event) => {handleScroll(event)}}>
-          <ul>
-            {items.map((item, index) => (
-              <FileListItem key={item.id} index={index} item={item} />
-            ))}
-          </ul>
+        <div className="side sub-view file-list">
+          <div className="header">Hello fresh</div>
+          <div className="body" onScroll={(event) => {handleScroll(event)}}>
+            <ul>
+              {items.displayedItems.map((item, index) => (
+                <FileListItem key={item.id} index={index} item={item} />
+              ))}
+            </ul>
+          </div>
+          <div className="footer">
+            <div>page {items.currentPage} of {items.pageCount}</div>
+            <div>total {items.total}</div>
+          </div>
         </div>
       </div>
     </>

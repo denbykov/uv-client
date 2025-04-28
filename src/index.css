@@ -18,6 +18,12 @@ body {
   font-family: 'Courier New', Courier, monospace;
 }
 
+ul, li {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
 .label {
   font-family: 'Orbitron', sans-serif;
   color: #D91734;
@@ -213,26 +219,7 @@ button.error.bordered:hover {
   padding: 8px 15px;
 }
 
-.sub-section {
-  height: 90%;
-  margin: 10% 10px 10% 10px;
-  background-color: #151817;
-
-  padding: 20px;
-  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
-}
-
-.main.sub-section {
-  width: 100%;
-  flex: 4;
-}
-
-.side.sub-section {
-  width: 100%;
-  flex: 2;
-}
-
-.main-section {
+.view {
   width: 100%;
   height: 100%;
 
@@ -242,18 +229,59 @@ button.error.bordered:hover {
   justify-content: space-around;
 }
 
-.scrollable {
+.sub-view {
+  height: 90%;
+  margin: 10% 10px 10% 10px;
+  background-color: #151817;
+
+  padding: 20px;
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.main.sub-view {
+  width: 100%;
+  flex: 4;
+}
+
+.side.sub-view {
+  width: 100%;
+  flex: 2;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-list .header {
+  height: 70px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  border-bottom: 2px solid #204A44;
+}
+
+.file-list .body {
   overflow-y: scroll;
 }
 
-ul, li {
-  padding: 0;
-  margin: 0;
-  list-style: none;
+.file-list .footer {
+  margin-top: 12px;
+  padding-top: 8px;
+  height: 20px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  border-top: 2px solid #204A44;
+
+  font-family: 'Orbitron', sans-serif;
+  text-align: right;
+
+  display: flex;
+  justify-content: space-between;
 }
 
 .file-list-item {
-  width: 100%;
+  width: 99%;
   height: 70px;
   margin-top: 8px;
   border: solid 2px;
