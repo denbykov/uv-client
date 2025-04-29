@@ -6,7 +6,8 @@ import { createRoot } from 'react-dom/client';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 import { WebSocketContext } from './websocket-context';
-import { DownloadingForm } from './components/downloading-form';
+import { DownloadingForm } from './components/downloading-form.jsx';
+import { FilesView } from './components/files-view.jsx';
 import * as protocol from './protocol/message';
 
 const backendUrl = "ws://localhost:3080/ws"
@@ -40,7 +41,7 @@ function Application() {
   }, [readyState]);
 
   return <WebSocketContext.Provider value={{ lastMessage, sendMessage }}>
-    <DownloadingForm/>
+    <FilesView/>
   </WebSocketContext.Provider>
 }
 

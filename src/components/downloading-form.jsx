@@ -5,48 +5,30 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
-
-class DownloadingState {
-  constructor() {
-    this.percentage = 0;
-    this.error = null;
-    this.done = false;
-    this.uuid = null;
-  }
-
-  copy(other) {
-    this.percentage = other.percentage;
-    this.error = other.error;
-    this.done = other.done;
-    this.uuid = other.uuid;
-  }
-}
+import { DownloadingState } from './states/downloading-state';
 
 export function DownloadingForm() {
   const { lastMessage, sendMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
 
   useEffect(() => {
-    if (dlState === null) {
-      return;
-    }
-
-    if (dlState === null && dlState.uuid !== lastMessage.header.uuid) {
-      return;
-    }
-
-    if (lastMessage === null) {
+    if (dlState === null || lastMessage === null) {
       return;
     }
 
     const handleMessage = async(lastMessage) => {
       const message = await protocol.parseMessage(lastMessage);
+
+      if (dlState.uuid !== message.header.uuid) {
+        return;
+      }
+
       if (message.header.type === protocol.types.Error) {
         setDlState((prev) => {
           const state = new DownloadingState();
 
           if (prev !== null) {
-            state.copy(prev);
+            return null;
           }
           
           state.error = message.payload.reason;
@@ -115,14 +97,12 @@ export function DownloadingForm() {
   if (dlState === null) {
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <form action={download} className="url-form">
-            <label>Enter URL</label>
-            <input name="url"></input>
-            <button className="bordered" type="submit">Donwload</button>
-          </form>
-        </div>
+      <div className="downloading-form-container">
+        <form action={download} className="downloading-form">
+          <label>Enter URL</label>
+          <input name="url"></input>
+          <button className="button" type="submit">Download</button>
+        </form>
       </div>
       </>
     );
@@ -131,13 +111,11 @@ export function DownloadingForm() {
   if (dlState.error !== null) {
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="error label">Error</div>
-            <div className="error message bordered-like">{dlState.error}</div>
-            <button className="bordered error" onClick={() => setDlState(null)}>Continue</button>
-          </div>
+      <div className="downloading-form-container">
+        <div className="dl-status-container error">
+          <div className="label">Error</div>
+          <div className="message">{dlState.error}</div>
+          <button className="button" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -148,16 +126,14 @@ export function DownloadingForm() {
     const percentage = dlState.percentage.toFixed(0) + "%";
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="label">Downloading</div>
-            <div className="message bordered progress-bar-container">
-              <div className="progress-percentage">{percentage}</div>
-              <div className="static-progress-bar" style={{width: percentage}}></div>
-            </div>
-            <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
+      <div className="downloading-form-container">
+        <div className="dl-status-container">
+          <div className="label">Downloading</div>
+          <div className="message button progress-bar-container">
+            <div className="progress-percentage">{percentage}</div>
+            <div className="static-progress-bar" style={{width: percentage}}></div>
           </div>
+          <button className="button" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -166,25 +142,22 @@ export function DownloadingForm() {
 
   if (dlState.percentage !== null) {
     var percentageValue = dlState.percentage.toFixed(0);
-    console.log(percentageValue);
     if (percentageValue == 100) {
       percentageValue = 99;
     }
     const percentage = percentageValue + "%";
     return (
       <>
-      <div className="canvas">
-        <div className="url-form-container">
-          <div className="dl-status-contaier">
-            <div className="label">Downloading</div>
-            <div className="message bordered progress-bar-container">
-              <div className="progress-bar" style={{width: percentage}}>
-                <div className="progress-animation"></div>
-              </div>
-              <div className="progress-percentage">{percentage}</div>
+      <div className="downloading-form-container">
+        <div className="dl-status-container">
+          <div className="label">Downloading</div>
+          <div className="message button progress-bar-container">
+            <div className="progress-bar" style={{width: percentage}}>
+              <div className="progress-animation"></div>
             </div>
-            <button className="bordered" onClick={() => cancel()}>Cancel</button>
+            <div className="progress-percentage">{percentage}</div>
           </div>
+          <button className="button" onClick={() => cancel()}>Cancel</button>
         </div>
       </div>
       </>
