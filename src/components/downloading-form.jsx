@@ -101,7 +101,7 @@ export function DownloadingForm() {
         <form action={download} className="downloading-form">
           <label>Enter URL</label>
           <input name="url"></input>
-          <button className="button" type="submit">Donwload</button>
+          <button className="button" type="submit">Download</button>
         </form>
       </div>
       </>
