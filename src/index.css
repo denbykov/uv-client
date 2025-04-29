@@ -299,6 +299,41 @@ button.add-item:hover {
 
   display: flex;
   justify-content: space-around;
+
+  position: relative
+}
+
+@keyframes progress-animation-full {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(500%);
+  }
+}
+
+.file-list-item .progress-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  
+  height: 100%;
+  width: 20%;
+
+  animation-name: progress-animation-full;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease;
+
+  will-change: transform;
+}
+
+li:nth-child(odd) .file-list-item .progress-animation {
+  background: linear-gradient(to right, rgba(222, 52, 77, 0), #D91734);
+}
+
+li:nth-child(even) .file-list-item .progress-animation {
+  background: linear-gradient(to right, rgba(222, 52, 77, 0), #E25166);
 }
 
 .file-list-item > div {

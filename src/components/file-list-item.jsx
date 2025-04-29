@@ -11,6 +11,9 @@ export function FileListItem({ index, item }) {
     <>
       <li>
         <div className='file-list-item' key={index}>
+          <div className="progress-animation">
+          </div>
+
           <div>{item.id}</div>
           <div>{item.source}</div>
           <div>{item.status}</div>
