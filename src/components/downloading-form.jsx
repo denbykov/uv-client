@@ -28,7 +28,7 @@ export function DownloadingForm() {
           const state = new DownloadingState();
 
           if (prev !== null) {
-            state.copy(prev);
+            return null;
           }
           
           state.error = message.payload.reason;
@@ -97,11 +97,11 @@ export function DownloadingForm() {
   if (dlState === null) {
     return (
       <>
-      <div className="url-form-container">
-        <form action={download} className="url-form">
+      <div className="downloading-form-container">
+        <form action={download} className="downloading-form">
           <label>Enter URL</label>
           <input name="url"></input>
-          <button className="bordered" type="submit">Donwload</button>
+          <button className="button" type="submit">Donwload</button>
         </form>
       </div>
       </>
@@ -111,11 +111,11 @@ export function DownloadingForm() {
   if (dlState.error !== null) {
     return (
       <>
-      <div className="url-form-container">
-        <div className="dl-status-contaier">
-          <div className="error label">Error</div>
-          <div className="error message bordered-like">{dlState.error}</div>
-          <button className="bordered error" onClick={() => setDlState(null)}>Continue</button>
+      <div className="downloading-form-container">
+        <div className="dl-status-contaier error">
+          <div className="label">Error</div>
+          <div className="message">{dlState.error}</div>
+          <button className="button" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -126,14 +126,14 @@ export function DownloadingForm() {
     const percentage = dlState.percentage.toFixed(0) + "%";
     return (
       <>
-      <div className="url-form-container">
+      <div className="downloading-form-container">
         <div className="dl-status-contaier">
           <div className="label">Downloading</div>
-          <div className="message bordered progress-bar-container">
+          <div className="message button progress-bar-container">
             <div className="progress-percentage">{percentage}</div>
             <div className="static-progress-bar" style={{width: percentage}}></div>
           </div>
-          <button className="bordered" onClick={() => setDlState(null)}>Continue</button>
+          <button className="button" onClick={() => setDlState(null)}>Continue</button>
         </div>
       </div>
       </>
@@ -148,16 +148,16 @@ export function DownloadingForm() {
     const percentage = percentageValue + "%";
     return (
       <>
-      <div className="url-form-container">
+      <div className="downloading-form-container">
         <div className="dl-status-contaier">
           <div className="label">Downloading</div>
-          <div className="message bordered progress-bar-container">
+          <div className="message button progress-bar-container">
             <div className="progress-bar" style={{width: percentage}}>
               <div className="progress-animation"></div>
             </div>
             <div className="progress-percentage">{percentage}</div>
           </div>
-          <button className="bordered" onClick={() => cancel()}>Cancel</button>
+          <button className="button" onClick={() => cancel()}>Cancel</button>
         </div>
       </div>
       </>

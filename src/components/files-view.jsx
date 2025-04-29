@@ -66,6 +66,7 @@ export function FilesView() {
   const { lastMessage, sendMessage } = useWebSocketData();
   const stateRef = useRef(new State());
   const [items, setItems] = useState(new Items());
+  const [error, setError] = useState(null);
 
   // Methods
 
@@ -202,6 +203,7 @@ export function FilesView() {
         if (state.downloadingsInProgess.includes(uuid)) {
           state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
           actualizeDisplayedItems();
+          setError(message.payload.reason);
         }
       }
     },
@@ -414,6 +416,16 @@ export function FilesView() {
 
   return (
     <>
+      {error !== null && (
+        <div className="error holder">
+          <div className="error window">
+            <div className='label'>Error</div>
+            <div className='message'>{error}</div>
+            <button className='button' onClick={() => setError(null)}>Close</button>
+          </div>
+        </div>
+      )}
+
       <div className="view">
         <div className="main sub-view">
           <DownloadingForm/>
@@ -423,7 +435,7 @@ export function FilesView() {
             <div>
               Nothing yet
             </div>
-            <button className="add-item bordered" onClick={onAddItem}>+</button>
+            <button className="add-item button" onClick={onAddItem}>+</button>
           </div>
           <div className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
