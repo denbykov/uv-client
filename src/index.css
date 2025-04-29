@@ -125,18 +125,18 @@ ul, li {
   transition: all 0.2s ease;
 }
 
-.dl-status-contaier {
+.dl-status-container {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
 }
 
-.dl-status-contaier .label {
+.dl-status-container .label {
   font-size: 24px;
 }
 
-.dl-status-contaier .message {
+.dl-status-container .message {
   margin-top: 12px;
   margin-bottom: 16px;
   width: 80%;
@@ -148,7 +148,7 @@ ul, li {
   overflow: hidden;
 }
 
-.dl-status-contaier button {
+.dl-status-container button {
   padding: 2px 20px;
   font-family: 'Orbitron', sans-serif;
   font-size: 24px;
@@ -200,7 +200,7 @@ ul, li {
   transform: translate(-50%, -50%);
 }
 
-.dl-status-contaier .progress-bar-container {
+.dl-status-container .progress-bar-container {
   padding: 8px 15px;
 }
 

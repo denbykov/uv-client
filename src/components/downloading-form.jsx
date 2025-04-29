@@ -112,7 +112,7 @@ export function DownloadingForm() {
     return (
       <>
       <div className="downloading-form-container">
-        <div className="dl-status-contaier error">
+        <div className="dl-status-container error">
           <div className="label">Error</div>
           <div className="message">{dlState.error}</div>
           <button className="button" onClick={() => setDlState(null)}>Continue</button>
@@ -127,7 +127,7 @@ export function DownloadingForm() {
     return (
       <>
       <div className="downloading-form-container">
-        <div className="dl-status-contaier">
+        <div className="dl-status-container">
           <div className="label">Downloading</div>
           <div className="message button progress-bar-container">
             <div className="progress-percentage">{percentage}</div>
@@ -149,7 +149,7 @@ export function DownloadingForm() {
     return (
       <>
       <div className="downloading-form-container">
-        <div className="dl-status-contaier">
+        <div className="dl-status-container">
           <div className="label">Downloading</div>
           <div className="message button progress-bar-container">
             <div className="progress-bar" style={{width: percentage}}>
