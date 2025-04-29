@@ -81,6 +81,21 @@ export function buildDownloadingRequest(uuid, url) {
   )
 }
 
+export function buildGetFilesRequest(uuid, limit, offset) {
+  const payload = {
+    offset: offset,
+    limit: limit,
+  }
+  
+  return new Message(
+    new Header(
+      types.GetFilesRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
 export function buildCancelRequest(uuid) {
   return new Message(
     new Header(
@@ -96,25 +111,14 @@ export async function parseMessage(lastMessage) {
   const data = new Uint8Array(dataBuffer);
   const preParsedMessage = Message.parse(data);
 
-  if (preParsedMessage.header.type == types.Error) {
-    const json = new TextDecoder().decode(preParsedMessage.payload);
-    const payload = JSON.parse(json);
-    preParsedMessage.payload = payload;
-    return preParsedMessage;
-  }
-
-  if (preParsedMessage.header.type == types.DownloadingProgress) {
-    const json = new TextDecoder().decode(preParsedMessage.payload);
-    const payload = JSON.parse(json);
-    preParsedMessage.payload = payload;
-    return preParsedMessage;
-  }
-
   if (preParsedMessage.header.type == types.Done) {
     return preParsedMessage;
+  } else {
+    const json = new TextDecoder().decode(preParsedMessage.payload);
+    const payload = JSON.parse(json);
+    preParsedMessage.payload = payload;
+    return preParsedMessage;
   }
-
-  throw new Error("Failed to parse backend message");
 }
 
 export {
