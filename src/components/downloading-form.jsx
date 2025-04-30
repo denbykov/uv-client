@@ -27,7 +27,7 @@ export function DownloadingForm() {
         setDlState((prev) => {
           const state = new DownloadingState();
 
-          if (prev !== null) {
+          if (prev !== null && state.started) {
             return null;
           }
           
@@ -41,7 +41,8 @@ export function DownloadingForm() {
           if (prev !== null) {
             state.copy(prev);
           }
-          
+
+          state.started = true;
           state.percentage = message.payload.percentage;
           return state;
         });

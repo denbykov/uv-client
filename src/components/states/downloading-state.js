@@ -6,6 +6,7 @@ export class DownloadingState {
     this.error = null;
     this.done = false;
     this.uuid = null;
+    this.started = false;
   }
 
   copy(other) {
