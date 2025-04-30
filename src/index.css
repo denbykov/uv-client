@@ -267,6 +267,7 @@ button.add-item:hover {
 }
 
 .file-list .body {
+  flex-grow: 1;
   overflow-y: scroll;
 }
 
