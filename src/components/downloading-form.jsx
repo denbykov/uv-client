@@ -46,7 +46,7 @@ export function DownloadingForm() {
           state.percentage = message.payload.percentage;
           return state;
         });
-      } else if (message.header.type === protocol.types.Done) {
+      } else if (message.header.type === protocol.types.DownloadingDone) {
         setDlState((prev) => {
           const state = new DownloadingState();
 

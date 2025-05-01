@@ -10,6 +10,7 @@ import { DownloadingState } from './states/downloading-state';
 export function FileListItem({ index, item }) {
   const { lastMessage, sendMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
+  const [itemStatus, setItemStatus] = useState(item.status);
 
   // Methods
 
@@ -20,6 +21,13 @@ export function FileListItem({ index, item }) {
       }
     
       const message = await protocol.parseMessage(lastMessage);
+
+      if (dlState !== null) {
+        console.log(message);
+        console.log(message.header.type === protocol.types.DownloadingDone);
+        console.log(message.payload.id);
+        console.log(message.payload.id === item.id);
+      }
 
       if (message.header.type === protocol.types.DownloadingProgress && message.payload.id === item.id) {
         setDlState((prev) => {
@@ -36,10 +44,8 @@ export function FileListItem({ index, item }) {
         });
       }
 
-      if (message.header.type === protocol.types.Done && 
-          dlState !== null && 
-          dlState.uuid === message.header.uuid) {
-        item.status = "f";
+      if (message.header.type === protocol.types.DownloadingDone && message.payload.id === item.id) {
+        setItemStatus("f");
         setDlState(null);
       }
     },
@@ -52,7 +58,7 @@ export function FileListItem({ index, item }) {
 
   // Rendering
 
-  if (item.status === "d" && dlState === null) {
+  if (itemStatus === "d" && dlState === null) {
     var newState = new DownloadingState();
     newState.percentage = 0;
     setDlState(newState);
