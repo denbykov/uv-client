@@ -247,10 +247,18 @@ export function FilesView() {
   const handleScrollAtBeginning = useCallback(
     function(event) {
       const scrollTop = event.currentTarget.scrollTop;
+      const offsetHeight = event.currentTarget.offsetHeight;
+      const scrollHeight = event.currentTarget.scrollHeight;
       const state = stateRef.current;
       const scrolling = state.scrolling;
 
       if (scrollTop >= scrolling.pageHeight) {
+        loadThreePages(+1);
+        updateCurrentPageNumber(+1);
+        return;
+      }
+
+      if (scrollTop + offsetHeight === scrollHeight) {
         loadThreePages(+1);
         updateCurrentPageNumber(+1);
         return;
@@ -320,8 +328,6 @@ export function FilesView() {
       const scrolling = state.scrolling;
 
       calculateScrollingConstants(event);
-
-      console.log(pagination.state);
 
       if (state.currentRequest !== null) {
         return;

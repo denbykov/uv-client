@@ -22,13 +22,6 @@ export function FileListItem({ index, item }) {
     
       const message = await protocol.parseMessage(lastMessage);
 
-      if (dlState !== null) {
-        console.log(message);
-        console.log(message.header.type === protocol.types.DownloadingDone);
-        console.log(message.payload.id);
-        console.log(message.payload.id === item.id);
-      }
-
       if (message.header.type === protocol.types.DownloadingProgress && message.payload.id === item.id) {
         setDlState((prev) => {
           var newState = new DownloadingState();
