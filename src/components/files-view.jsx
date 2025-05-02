@@ -7,6 +7,7 @@ import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingForm } from './downloading-form.jsx';
 import { FileListItem } from './file-list-item.jsx';
+import { FileView } from './file-view.jsx';
 
 const paginationStates = {
   atBeginning: "atBeginning",
@@ -72,6 +73,7 @@ export function FilesView() {
   const stateRef = useRef(new State());
   const [items, setItems] = useState(new Items());
   const [error, setError] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Methods
 
@@ -221,7 +223,7 @@ export function FilesView() {
       state.currentRequest = new CurrentRequest(protocol.uuidv4(), direction, offset);
     
       const request = protocol.buildGetFilesRequest(
-        state.currentRequest.uuid, limit, offset, Math.max(0, offset));
+        state.currentRequest.uuid, limit, Math.max(0, offset));
     
       sendMessage(request.serialize(), []);
     },
@@ -352,11 +354,6 @@ export function FilesView() {
     []
   );
 
-  const onAddItem = useCallback(
-    function() {
-    }
-  );
-
   // Effects
 
   useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
@@ -377,20 +374,34 @@ export function FilesView() {
       )}
 
       <div className="view">
-        <div className="main sub-view">
-          <DownloadingForm/>
+        {selectedFile === null && (
+          <div className="main sub-view">
+          <DownloadingForm 
+            setSelectedFile={setSelectedFile}
+          />
         </div>
+        )}
+        {selectedFile !== null && (
+          <div className="main sub-view">
+          <FileView selectedFile={selectedFile}/>
+        </div>
+        )} 
         <div className="side sub-view file-list">
           <div className="header">
             <div>
               Nothing yet
             </div>
-            <button className="add-item button" onClick={onAddItem}>+</button>
+            <button className="add-item button" onClick={() => setSelectedFile(null)}>+</button>
           </div>
           <div className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
               {items.displayedItems.map((item, index) => (
-                <FileListItem key={item.id} index={index} item={item} />
+                <FileListItem 
+                  key={item.id} 
+                  index={index}
+                  item={item}
+                  setSelectedFile={setSelectedFile} 
+                />
               ))}
             </ul>
           </div>

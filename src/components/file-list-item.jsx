@@ -7,8 +7,8 @@ import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingState } from './states/downloading-state';
 
-export function FileListItem({ index, item }) {
-  const { lastMessage, sendMessage } = useWebSocketData();
+export function FileListItem({ index, item, setSelectedFile }) {
+  const { lastMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
 
@@ -67,7 +67,7 @@ export function FileListItem({ index, item }) {
     return (
       <>
         <li>
-          <div className='file-list-item' key={index}>
+          <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
             <div className="progress-animation">
             </div>
             <div>{item.id}</div>
@@ -84,7 +84,7 @@ export function FileListItem({ index, item }) {
   return (
     <>
       <li>
-        <div className='file-list-item' key={index}>
+        <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
           <div>{item.id}</div>
           <div>{item.source}</div>
           <div>{item.status}</div>

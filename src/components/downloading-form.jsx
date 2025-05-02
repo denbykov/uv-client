@@ -7,7 +7,7 @@ import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingState } from './states/downloading-state';
 
-export function DownloadingForm() {
+export function DownloadingForm({ setSelectedFile }) {
   const { lastMessage, sendMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
 
@@ -26,11 +26,7 @@ export function DownloadingForm() {
       if (message.header.type === protocol.types.Error) {
         setDlState((prev) => {
           const state = new DownloadingState();
-
-          if (prev !== null && state.started) {
-            return null;
-          }
-          
+          state.copy(prev);
           state.error = message.payload.reason;
           return state;
         });
@@ -42,7 +38,7 @@ export function DownloadingForm() {
             state.copy(prev);
           }
 
-          state.started = true;
+          setSelectedFile(message.payload.id);
           state.percentage = message.payload.percentage;
           return state;
         });
@@ -82,19 +78,6 @@ export function DownloadingForm() {
     }
   );
 
-  const cancel = useCallback(
-    function() {
-      if (dlState === null) {
-        console.log.Error("Downloading state does not esist!");
-        return;
-      }
-      const request = protocol.buildCancelRequest(dlState.uuid);
-      sendMessage(request.serialize(), []);
-
-      setDlState(null);
-    }
-  );
-
   if (dlState === null) {
     return (
       <>
@@ -117,48 +100,6 @@ export function DownloadingForm() {
           <div className="label">Error</div>
           <div className="message">{dlState.error}</div>
           <button className="button" onClick={() => setDlState(null)}>Continue</button>
-        </div>
-      </div>
-      </>
-    );
-  }
-
-  if (dlState.done === true) {
-    const percentage = dlState.percentage.toFixed(0) + "%";
-    return (
-      <>
-      <div className="downloading-form-container">
-        <div className="dl-status-container">
-          <div className="label">Downloading</div>
-          <div className="message button progress-bar-container">
-            <div className="progress-percentage">{percentage}</div>
-            <div className="static-progress-bar" style={{width: percentage}}></div>
-          </div>
-          <button className="button" onClick={() => setDlState(null)}>Continue</button>
-        </div>
-      </div>
-      </>
-    );
-  }
-
-  if (dlState.percentage !== null) {
-    var percentageValue = dlState.percentage.toFixed(0);
-    if (percentageValue == 100) {
-      percentageValue = 99;
-    }
-    const percentage = percentageValue + "%";
-    return (
-      <>
-      <div className="downloading-form-container">
-        <div className="dl-status-container">
-          <div className="label">Downloading</div>
-          <div className="message button progress-bar-container">
-            <div className="progress-bar" style={{width: percentage}}>
-              <div className="progress-animation"></div>
-            </div>
-            <div className="progress-percentage">{percentage}</div>
-          </div>
-          <button className="button" onClick={() => cancel()}>Cancel</button>
         </div>
       </div>
       </>

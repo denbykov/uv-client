@@ -96,6 +96,20 @@ export function buildGetFilesRequest(uuid, limit, offset) {
   )
 }
 
+export function buildGetFileRequest(uuid, id) {
+  const payload = {
+    id: id,
+  }
+  
+  return new Message(
+    new Header(
+      types.GetFileRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
 export function buildCancelRequest(uuid) {
   return new Message(
     new Header(
