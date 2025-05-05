@@ -7,10 +7,11 @@ import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingState } from './states/downloading-state';
 
-export function FileListItem({ index, item, setSelectedFile }) {
+export function FileListItem({ index, item, setSelectedFile, checked, onCheckChanged }) {
   const { lastMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
+  const [isChecked, setIsChecked] = useState(checked);
 
   // Methods
 
@@ -70,6 +71,19 @@ export function FileListItem({ index, item, setSelectedFile }) {
           <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
             <div className="progress-animation">
             </div>
+
+            <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => {
+                  onCheckChanged(item.id, e.target.checked);
+                  setIsChecked(e.target.checked);
+                }}
+              />
+              <span className="checkmark"></span>
+            </label>
+
             <div>{item.id}</div>
             <div>{percentage}</div>
             <div>{item.source}</div>
@@ -85,6 +99,18 @@ export function FileListItem({ index, item, setSelectedFile }) {
     <>
       <li>
         <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
+          <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => {
+                onCheckChanged(item.id, e.target.checked);
+                setIsChecked(e.target.checked);
+              }}
+            />
+            <span className="checkmark"></span>
+          </label>
+
           <div>{item.id}</div>
           <div>{item.source}</div>
           <div>{item.status}</div>

@@ -49,6 +49,7 @@ class State {
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
     this.downloadingsInProgess = [];
+    this.checkedItems = [];
   }
 }
 
@@ -74,6 +75,7 @@ export function FilesView() {
   const [items, setItems] = useState(new Items());
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [checkedItems, setCheckedItems] = useState([]);
 
   // Methods
 
@@ -354,6 +356,36 @@ export function FilesView() {
     []
   );
 
+  const onCheckChanged = useCallback(
+    function(id, checked) {
+      const state = stateRef.current;
+
+      if (checked === true) {
+        state.checkedItems.push(id);
+      }
+
+      if (checked === false) {
+        state.checkedItems = state.checkedItems.filter((item) => item !== id);
+      }
+
+      setCheckedItems(state.checkedItems);
+    },
+    []
+  );
+
+  const isChecked = useCallback(
+    function(id) {
+      // if (id > 65) {
+      //   console.log(id);
+      //   console.log(checkedItems);
+      //   console.log(typeof checkedItems.find((item) => item === id) !== "undefined");
+      // }
+
+      return typeof checkedItems.find((item) => item === id) !== "undefined";
+    },
+    [checkedItems]
+  );
+
   // Effects
 
   useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
@@ -395,14 +427,16 @@ export function FilesView() {
           </div>
           <div className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
-              {items.displayedItems.map((item, index) => (
-                <FileListItem 
+              {items.displayedItems.map((item, index) => {
+                return <FileListItem 
                   key={item.id} 
                   index={index}
                   item={item}
                   setSelectedFile={setSelectedFile} 
+                  checked={isChecked(item.id)}
+                  onCheckChanged={onCheckChanged}
                 />
-              ))}
+              })}
             </ul>
           </div>
           <div className="footer">

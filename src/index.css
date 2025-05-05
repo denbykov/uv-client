@@ -284,6 +284,39 @@ button.add-item:hover {
   will-change: transform;
 }
 
+.file-list-item .checkbox-container {
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
+  user-select: none;
+
+  margin-left: 12px;
+}
+
+.file-list-item .checkbox-container input {
+  display: none;
+}
+
+.file-list-item .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #D91734;
+  border-radius: 2px;
+  margin-right: 8px;
+  position: relative;
+}
+
+.file-list-item .checkbox-container input:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border: solid #D91734 3px;
+  background-color: #D91734;
+}
+
 li:nth-child(odd) .file-list-item .progress-animation {
   background: linear-gradient(to right, rgba(222, 52, 77, 0), #D91734);
 }
