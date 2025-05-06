@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { FaTrash } from 'react-icons/fa';
 
 import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
@@ -368,20 +369,33 @@ export function FilesView() {
         state.checkedItems = state.checkedItems.filter((item) => item !== id);
       }
 
-      setCheckedItems(state.checkedItems);
+      const checkedItems = state.checkedItems.slice();
+      setCheckedItems(checkedItems);
     },
     []
   );
 
   const isChecked = useCallback(
     function(id) {
-      // if (id > 65) {
-      //   console.log(id);
-      //   console.log(checkedItems);
-      //   console.log(typeof checkedItems.find((item) => item === id) !== "undefined");
-      // }
-
       return typeof checkedItems.find((item) => item === id) !== "undefined";
+    },
+    [checkedItems]
+  );
+
+  const isAnythingChecked = useCallback(
+    function() {
+      return checkedItems.length > 0;
+    },
+    [checkedItems]
+  );
+
+  const onHeaderCheckChanged = useCallback(
+    function(e) {
+      if (!e.target.checked) {
+        const state = stateRef.current;
+        state.checkedItems = [];
+        setCheckedItems([]);
+      }
     },
     [checkedItems]
   );
@@ -421,9 +435,26 @@ export function FilesView() {
         <div className="side sub-view file-list">
           <div className="header">
             <div>
-              Nothing yet
+              <div>
+                Nothing yet
+              </div>
+              <button className="add-item button" onClick={() => setSelectedFile(null)}>+</button>
             </div>
-            <button className="add-item button" onClick={() => setSelectedFile(null)}>+</button>
+            <div>
+              <div className={"multiaction-container" + (isAnythingChecked() ? "" : " disabled")}>
+                <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isAnythingChecked()}
+                    onChange={onHeaderCheckChanged}
+                  />
+                  <span className="checkmark"></span>
+                </label>
+                <button onClick={() => {console.log("clicked")}} className="delete icon-button" aria-label="Delete">
+                  <FaTrash className="icon" />
+                </button>
+              </div>
+            </div>
           </div>
           <div className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
@@ -432,6 +463,7 @@ export function FilesView() {
                   key={item.id} 
                   index={index}
                   item={item}
+                  selectedFile={selectedFile} 
                   setSelectedFile={setSelectedFile} 
                   checked={isChecked(item.id)}
                   onCheckChanged={onCheckChanged}

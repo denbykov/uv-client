@@ -7,10 +7,11 @@ import { useWebSocketData } from '../websocket-context';
 import * as protocol from '../protocol/message';
 import { DownloadingState } from './states/downloading-state';
 
-export function FileListItem({ index, item, setSelectedFile, checked, onCheckChanged }) {
+export function FileListItem({ index, item, selectedFile, setSelectedFile, checked, onCheckChanged }) {
   const { lastMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
+
   const [isChecked, setIsChecked] = useState(checked);
 
   // Methods
@@ -49,6 +50,7 @@ export function FileListItem({ index, item, setSelectedFile, checked, onCheckCha
   // Effects
 
   useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
+  useEffect(() => {setIsChecked(checked)}, [checked]);
 
   // Rendering
 
@@ -57,6 +59,8 @@ export function FileListItem({ index, item, setSelectedFile, checked, onCheckCha
     newState.percentage = 0;
     setDlState(newState);
   }
+
+  const isSelected = selectedFile === item.id;
 
   if (dlState !== null) {
     var percentageValue = dlState.percentage.toFixed(0);
@@ -68,7 +72,7 @@ export function FileListItem({ index, item, setSelectedFile, checked, onCheckCha
     return (
       <>
         <li>
-          <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
+          <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedFile(item.id)}>
             <div className="progress-animation">
             </div>
 
@@ -98,7 +102,7 @@ export function FileListItem({ index, item, setSelectedFile, checked, onCheckCha
   return (
     <>
       <li>
-        <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
+        <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedFile(item.id)}>
           <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"

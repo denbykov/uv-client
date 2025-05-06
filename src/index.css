@@ -213,6 +213,114 @@ ul, li {
   
   display: flex;
   justify-content: space-between;
+  flex-direction: column;
+}
+
+.file-list .header > div:nth-child(1) {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  margin-bottom: 10px;
+}
+
+.file-list .header > div:nth-child(2) {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 10px;
+}
+
+.file-list .header .multiaction-container {
+  border-right: #1C3632 solid 2px;
+  padding-right: 8px;
+}
+
+.file-list .header .multiaction-container .checkbox-container {
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
+  user-select: none;
+
+  margin-left: 14px;
+
+  cursor: pointer;
+}
+
+.file-list .header .multiaction-container.disabled .checkbox-container {
+  cursor: default;
+}
+
+.file-list .header .multiaction-container .checkbox-container input {
+  display: none;
+}
+
+.file-list .header .multiaction-container .checkbox-container .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #D91734;
+  border-radius: 2px;
+  margin-right: 8px;
+  position: relative;
+}
+
+.file-list .header .multiaction-container.disabled .checkbox-container .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #FF9F1C;
+  border-radius: 2px;
+  margin-right: 8px;
+  position: relative;
+}
+
+.file-list .header .multiaction-container .checkbox-container input:checked + .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border: solid #D91734 3px;
+  background-color: #D91734;
+}
+
+.file-list .header .multiaction-container .icon-button {
+  background: none;
+  border: none;
+
+  cursor: pointer;
+
+  transition: all 0.1s ease;
+}
+
+.file-list .header .multiaction-container .icon-button > .icon {
+  color: #D91734;
+
+  margin-bottom: 2px;
+  margin-top: 4px;
+  font-size: 18px;
+
+  background: none;
+  border: none;
+
+  transition: all 0.3s ease;
+}
+
+.file-list .header .multiaction-container .icon-button:hover {
+  background: rgba(253, 255, 252, 0.1);
+  border-radius: 12px;
+}
+
+.file-list .header .multiaction-container.disabled .icon-button {
+  cursor: default;
+}
+
+
+.file-list .header .multiaction-container.disabled .icon-button .icon {
+  color: #FF9F1C;
+}
+
+.file-list .header .multiaction-container.disabled .icon-button:hover {
+  background: none;
+  border: none;
 }
 
 button.add-item {
@@ -259,6 +367,10 @@ button.add-item:hover {
   align-items: center;
 }
 
+.file-list-item.selected {
+  background: #172220;
+}
+
 @keyframes progress-animation-full {
   from {
     transform: translateX(-100%);
@@ -291,6 +403,8 @@ button.add-item:hover {
   user-select: none;
 
   margin-left: 12px;
+
+  cursor: pointer;
 }
 
 .file-list-item .checkbox-container input {
