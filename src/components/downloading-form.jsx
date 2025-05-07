@@ -74,7 +74,7 @@ export function DownloadingForm({ setSelectedFile }) {
 
       const url = formData.get("url");
       const request = protocol.buildDownloadingRequest(state.uuid, url);
-      sendMessage(request.serialize(), [])
+      sendMessage(request.serialize(), []);
     }
   );
 

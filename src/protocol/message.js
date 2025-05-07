@@ -120,6 +120,20 @@ export function buildCancelRequest(uuid) {
   )
 }
 
+export function builDeleteFilesRequest(uuid, ids) {
+  const payload = {
+    ids: ids,
+  }
+  
+  return new Message(
+    new Header(
+      types.DeleteFilesRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
 export async function parseMessage(lastMessage) {
   const dataBuffer = await lastMessage.data.arrayBuffer();
   const data = new Uint8Array(dataBuffer);

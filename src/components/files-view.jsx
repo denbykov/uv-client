@@ -51,6 +51,15 @@ class State {
     this.scrolling = new ScrollingData();
     this.downloadingsInProgess = [];
     this.checkedItems = [];
+    
+    this.deletionRequestUuid = null;
+  }
+
+  resetScrolling = function() {
+    this.currentRequest = null;
+    this.pagination = new PaginationData();
+    this.scrolling = new ScrollingData();
+    this.checkedItems = [];
   }
 }
 
@@ -155,6 +164,36 @@ export function FilesView() {
     },
     []
   );
+
+  const isChecked = useCallback(
+    function(id) {
+      return typeof checkedItems.find((item) => item === id) !== "undefined";
+    },
+    [checkedItems]
+  );
+
+  const resetScrolling = useCallback(
+    function() {
+      const state = stateRef.current;
+      
+      console.log(state.checkedItems);
+      console.log(checkedItems);
+      console.log(selectedFile);
+
+      if (isChecked(selectedFile)) {
+        setSelectedFile(null);
+      }
+
+      state.resetScrolling();
+
+      var element = document.getElementById('scrollable');
+      element.scrollTop = 0;
+      loadThreePages(0);
+
+      setCheckedItems([]);
+    },
+    [selectedFile, checkedItems]
+  );
   
   const handleMessage = useCallback(
     async function(lastMessage) {
@@ -180,6 +219,21 @@ export function FilesView() {
         return;
       }
 
+      if (message.header.type === protocol.types.Done && 
+          state.deletionRequestUuid !== null &&
+          state.deletionRequestUuid === message.header.uuid) {
+        resetScrolling();
+        state.deletionRequestUuid = null;
+        return;
+      }
+
+      if (message.header.type === protocol.types.Error && 
+          state.deletionRequestUuid !== null &&
+          state.deletionRequestUuid === message.header.uuid) {
+        console.error(`Deletion failed: ${message.payload.reason}`);
+        return;
+      }
+
       if (message.header.type === protocol.types.Error && 
           state.currentRequest !== null && 
           state.currentRequest.uuid === uuid) {
@@ -195,7 +249,7 @@ export function FilesView() {
         }
       }
     },
-    []
+    [selectedFile, checkedItems]
   );
   
   const loadThreePages = useCallback(
@@ -375,13 +429,6 @@ export function FilesView() {
     []
   );
 
-  const isChecked = useCallback(
-    function(id) {
-      return typeof checkedItems.find((item) => item === id) !== "undefined";
-    },
-    [checkedItems]
-  );
-
   const isAnythingChecked = useCallback(
     function() {
       return checkedItems.length > 0;
@@ -398,6 +445,21 @@ export function FilesView() {
       }
     },
     [checkedItems]
+  );
+
+  const onDeleteFilesClicked = useCallback(
+    function() {
+      const state = stateRef.current;
+      if (state.deletionRequestUuid !== null) {
+        console.error(`other delteion request is in progress, uuid: ${state.deletionRequestUuid}`)
+        return
+      }
+
+      state.deletionRequestUuid = protocol.uuidv4();
+      const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, state.checkedItems);
+      sendMessage(request.serialize(), []);
+    },
+    []
   );
 
   // Effects
@@ -450,13 +512,13 @@ export function FilesView() {
                   />
                   <span className="checkmark"></span>
                 </label>
-                <button onClick={() => {console.log("clicked")}} className="delete icon-button" aria-label="Delete">
+                <button onClick={onDeleteFilesClicked} className="delete icon-button" aria-label="Delete">
                   <FaTrash className="icon" />
                 </button>
               </div>
             </div>
           </div>
-          <div className="body" onScroll={(event) => {handleScroll(event)}}>
+          <div id='scrollable' className="body" onScroll={(event) => {handleScroll(event)}}>
             <ul>
               {items.displayedItems.map((item, index) => {
                 return <FileListItem 
