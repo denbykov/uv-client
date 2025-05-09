@@ -53,6 +53,7 @@ class State {
     this.checkedItems = [];
     
     this.deletionRequestUuid = null;
+    this.secondaryDeletionRequests = [];
   }
 
   resetScrolling = function() {
@@ -175,10 +176,6 @@ export function FilesView() {
   const resetScrolling = useCallback(
     function() {
       const state = stateRef.current;
-      
-      console.log(state.checkedItems);
-      console.log(checkedItems);
-      console.log(selectedFile);
 
       if (isChecked(selectedFile)) {
         setSelectedFile(null);
@@ -227,10 +224,19 @@ export function FilesView() {
         return;
       }
 
-      if (message.header.type === protocol.types.Error && 
+      if (message.header.type === protocol.types.DeleteFilesError && 
           state.deletionRequestUuid !== null &&
           state.deletionRequestUuid === message.header.uuid) {
-        console.error(`Deletion failed: ${message.payload.reason}`);
+        var failedIds = message.payload.failedIds
+        var msg = `failed to delete files: ${failedIds}`;
+        console.error(msg);
+        
+        state.checkedItems = state.checkedItems.filter((item) => failedIds.includes(item));
+        setCheckedItems(state.checkedItems);
+
+        actualizeDisplayedItems();
+        setError(msg);
+        state.deletionRequestUuid = null;
         return;
       }
 
@@ -246,6 +252,13 @@ export function FilesView() {
           state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
           actualizeDisplayedItems();
           setError(message.payload.reason);
+        }
+      }
+
+      if (message.header.type === protocol.types.Canceled) {
+        if (state.downloadingsInProgess.includes(uuid)) {
+          state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
+          actualizeDisplayedItems();
         }
       }
     },
