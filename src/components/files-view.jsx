@@ -74,7 +74,7 @@ class DownloadingsInProgess {
     this.items = this.items.filter((el) => el === uuid);
   }
 
-  getById = function(id) {
+  getByID = function(id) {
     var item = this.items.find((item) => item.id === id);
     if (typeof item === "undefined") {
       return null;
@@ -264,6 +264,13 @@ export function FilesView() {
         return;
       }
 
+      if (message.header.type === protocol.types.Done && 
+          state.secondaryDeletionRequests.includes(uuid)) {
+        resetScrolling();
+        state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
+        return;
+      }
+
       if (message.header.type === protocol.types.DeleteFilesError && 
           state.deletionRequestUuid !== null &&
           state.deletionRequestUuid === message.header.uuid) {
@@ -280,6 +287,18 @@ export function FilesView() {
         return;
       }
 
+      if (message.header.type === protocol.types.DeleteFilesError && 
+          state.secondaryDeletionRequests.includes(uuid)) {
+        var failedIds = message.payload.failedIds
+        var msg = `failed to delete files: ${failedIds}`;
+        console.error(msg);
+        
+        state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
+
+        setError(msg);
+        return;
+      }
+
       if (message.header.type === protocol.types.Error && 
           state.currentRequest !== null && 
           state.currentRequest.uuid === uuid) {
@@ -287,19 +306,32 @@ export function FilesView() {
         return;
       }
 
-      if (message.header.type === protocol.types.Error) {
-        if (state.downloadingsInProgess.includesUUID(uuid)) {
-          state.downloadingsInProgess.remove(uuid);
-          actualizeDisplayedItems();
-          setError(message.payload.reason);
-        }
+      if (message.header.type === protocol.types.Error &&
+          state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.remove(uuid);
+        actualizeDisplayedItems();
+        setError(message.payload.reason);
+        return;
       }
 
-      if (message.header.type === protocol.types.Canceled) {
-        if (state.downloadingsInProgess.includesUUID(uuid)) {
-          state.downloadingsInProgess.remove(uuid);
-          actualizeDisplayedItems();
+      if (message.header.type === protocol.types.Canceled &&
+          state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.remove(uuid);
+        actualizeDisplayedItems();
+        return
+      }
+
+      if (message.header.type === protocol.types.DownloadingDone) {
+        var item = state.downloadingsInProgess.getByID(message.payload.id);
+
+        if (item.canceled) {
+          let uuid = protocol.uuidv4();
+          state.secondaryDeletionRequests.push(uuid);
+          let request = protocol.builDeleteFilesRequest(uuid, [item.id]);
+          sendMessage(request.serialize(), []);
         }
+
+        return;
       }
     },
     [selectedFile, checkedItems]
@@ -500,6 +532,15 @@ export function FilesView() {
     [checkedItems]
   );
 
+  const cancelDownloading = useCallback(
+    function(downloadingInProgress) {
+      downloadingInProgress.canceled = true;
+      const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
+      sendMessage(request.serialize(), []);
+    },
+    []
+  );
+
   const onDeleteFilesClicked = useCallback(
     function() {
       const state = stateRef.current;
@@ -512,12 +553,10 @@ export function FilesView() {
 
       for (let i = 0; i < state.checkedItems.length; i++) {
         var id = state.checkedItems[i];
-        var downloadingInProgress = state.downloadingsInProgess.getById(id);
+        var downloadingInProgress = state.downloadingsInProgess.getByID(id);
 
         if (downloadingInProgress !== null) {
-          downloadingInProgress.canceled = true;
-          const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
-          sendMessage(request.serialize(), []);
+          cancelDownloading(downloadingInProgress);
         } else {
           idsToDelete.push(id);
         }
