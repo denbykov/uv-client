@@ -73,6 +73,15 @@ class DownloadingsInProgess {
   remove = function(uuid) {
     this.items = this.items.filter((el) => el === uuid);
   }
+
+  getById = function(id) {
+    var item = this.items.find((item) => item.id === id);
+    if (typeof item === "undefined") {
+      return null;
+    }
+
+    return item;
+  }
 }
 
 class State {
@@ -499,9 +508,26 @@ export function FilesView() {
         return
       }
 
-      state.deletionRequestUuid = protocol.uuidv4();
-      const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, state.checkedItems);
-      sendMessage(request.serialize(), []);
+      var idsToDelete = [];
+
+      for (let i = 0; i < state.checkedItems.length; i++) {
+        var id = state.checkedItems[i];
+        var downloadingInProgress = state.downloadingsInProgess.getById(id);
+
+        if (downloadingInProgress !== null) {
+          downloadingInProgress.canceled = true;
+          const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
+          sendMessage(request.serialize(), []);
+        } else {
+          idsToDelete.push(id);
+        }
+      }
+
+      if (idsToDelete.length > 0) {
+        state.deletionRequestUuid = protocol.uuidv4();
+        const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
+        sendMessage(request.serialize(), []);
+      }
     },
     []
   );

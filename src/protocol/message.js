@@ -141,6 +141,8 @@ export async function parseMessage(lastMessage) {
 
   if (preParsedMessage.header.type == types.Done) {
     return preParsedMessage;
+  } else if (preParsedMessage.header.type == types.Canceled) {
+    return preParsedMessage;
   } else {
     const json = new TextDecoder().decode(preParsedMessage.payload);
     const payload = JSON.parse(json);
