@@ -44,12 +44,43 @@ class CurrentRequest {
   }
 }
 
+
+class DownloadingInProgress {
+    constructor(uuid, id) {
+      this.uuid = uuid;
+      this.id = id;
+      this.canceled = false;
+    }
+}
+
+class DownloadingsInProgess {
+  constructor() {
+    this.items = [];
+  }
+
+  add = function(uuid, id) {
+    this.items.push(new DownloadingInProgress(uuid, id));
+  }
+
+  includesUUID = function(uuid) {
+    return typeof this.items.find((item) => item.uuid === uuid) !== "undefined";
+  }
+
+  includesID = function(id) {
+    return typeof this.items.find((item) => item.id === id) !== "undefined";
+  }
+
+  remove = function(uuid) {
+    this.items = this.items.filter((el) => el === uuid);
+  }
+}
+
 class State {
   constructor() {
     this.currentRequest = null;
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
-    this.downloadingsInProgess = [];
+    this.downloadingsInProgess = new DownloadingsInProgess();
     this.checkedItems = [];
     
     this.deletionRequestUuid = null;
@@ -209,8 +240,8 @@ export function FilesView() {
       }
 
       if (message.header.type === protocol.types.DownloadingProgress) {
-        if (!state.downloadingsInProgess.includes(uuid)) {
-          state.downloadingsInProgess.push(uuid);
+        if (!state.downloadingsInProgess.includesUUID(uuid)) {
+          state.downloadingsInProgess.add(uuid, message.payload.id);
           actualizeDisplayedItems();
         }
         return;
@@ -248,16 +279,16 @@ export function FilesView() {
       }
 
       if (message.header.type === protocol.types.Error) {
-        if (state.downloadingsInProgess.includes(uuid)) {
-          state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
+        if (state.downloadingsInProgess.includesUUID(uuid)) {
+          state.downloadingsInProgess.remove(uuid);
           actualizeDisplayedItems();
           setError(message.payload.reason);
         }
       }
 
       if (message.header.type === protocol.types.Canceled) {
-        if (state.downloadingsInProgess.includes(uuid)) {
-          state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
+        if (state.downloadingsInProgess.includesUUID(uuid)) {
+          state.downloadingsInProgess.remove(uuid);
           actualizeDisplayedItems();
         }
       }
