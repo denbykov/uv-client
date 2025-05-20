@@ -14,31 +14,26 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
 
   // Methods
 
-  const handleDoneMessage = useCallback(
+  const handleProgressMessage = useCallback(
     function(message) {
       if (message.payload.id === item.id) {
         setDlState((prev) => {
-          var newState = new DownloadingState();
-          
-          if (prev !== null) {
-            newState.copy(prev); 
-          }
-
+          var newState = prev.clone();
           newState.uuid = message.header.uuid;
           newState.percentage = message.payload.percentage;
-
+          
           return newState;
         });
       }
     },
     []
   );
-
-  const handleProgressMessage = useCallback(
+  
+  const handleDoneMessage = useCallback(
     function(message) {
       if (message.payload.id === item.id) {
-      setItemStatus("f");
-      setDlState(null);
+        setItemStatus("f");
+        setDlState(null);
       }
     },
     []

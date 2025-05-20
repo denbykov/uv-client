@@ -49,5 +49,12 @@ function useMessage(handler, messageType) {
 
 export const useDownloadingProgressMessage = (handler) => useMessage(handler, types.DownloadingProgress);
 export const useDownloadingDoneMessage = (handler) => useMessage(handler, types.DownloadingDone);
-export const useGetFileResponseMessage = (handler) => useMessage(handler, types.GetFileResponse);
+
 export const useErrorMessage = (handler) => useMessage(handler, types.Error);
+export const useDoneMessage = (handler) => useMessage(handler, types.Done);
+export const useCanceledMessage = (handler) => useMessage(handler, types.Canceled);
+
+export const useGetFilesResponseMessage = (handler) => useMessage(handler, types.GetFilesResponse);
+export const useGetFileResponseMessage = (handler) => useMessage(handler, types.GetFileResponse);
+
+export const useDeleteFilesErrorMessage = (handler) => useMessage(handler, types.DeleteFilesError);

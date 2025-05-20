@@ -5,10 +5,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/index';
 import { DownloadingForm } from './downloading-form.jsx';
 import { FileListItem } from './file-list-item.jsx';
 import { FileView } from './file-view.jsx';
+import * as protocol from '../protocol/index';
+import { 
+  useDownloadingProgressMessage,
+  useDownloadingDoneMessage,
+  useErrorMessage,
+  useDoneMessage,
+  useGetFilesResponseMessage,
+  useDeleteFilesErrorMessage,
+  useCanceledMessage
+ } from '../protocol/hooks';
 
 const paginationStates = {
   atBeginning: "atBeginning",
@@ -121,7 +130,7 @@ class Items {
 }
 
 export function FilesView() {
-  const { lastMessage, sendMessage, send } = useWebSocketData();
+  const { send } = useWebSocketData();
   const stateRef = useRef(new State());
   const [items, setItems] = useState(new Items());
   const [error, setError] = useState(null);
@@ -165,40 +174,6 @@ export function FilesView() {
     []
   );
 
-  const handleFilesMessage = useCallback(
-    function(message) {
-      const state = stateRef.current;
-      const pagination = state.pagination;
-      pagination.total = message.payload.total;
-      pagination.items = message.payload.files;
-      updateDisplayedItems();
-
-      const request = state.currentRequest;
-
-      pagination.offset = request.offset;
-      const direction = request.direction;
-
-      state.currentRequest = null;
-      
-      if (request.direction === 0) {
-        return;
-      }
-
-      if (direction === +1 && pagination.total <= pagination.offset + pagination.limit * 2) {
-        pagination.state = paginationStates.atEnd;
-        return;
-      }
-
-      if (direction === -1 && pagination.offset === -pagination.limit) {
-        pagination.state = paginationStates.atBeginning;
-        return;
-      }
-      
-      pagination.state = paginationStates.inMiddle;
-    },
-    []
-  );
-
   const actualizeDisplayedItems = useCallback(
     function() {
       loadThreePages(0);
@@ -231,48 +206,97 @@ export function FilesView() {
     },
     [selectedFile, checkedItems]
   );
-  
-  const handleMessage = useCallback(
-    async function(lastMessage) {
-      if (lastMessage === null) {
-        return;
-      }
-    
+
+  const handleFilesMessage = useCallback(
+    function(message) {
       const state = stateRef.current;
-    
-      const message = await protocol.parseMessageLegacy(lastMessage);
+      const pagination = state.pagination;
+      pagination.total = message.payload.total;
+      pagination.items = message.payload.files;
+      updateDisplayedItems();
+
+      const request = state.currentRequest;
+
+      pagination.offset = request.offset;
+      const direction = request.direction;
+
+      state.currentRequest = null;
+      
+      if (request.direction === 0) {
+        return;
+      }
+
+      if (direction === +1 && pagination.total <= pagination.offset + pagination.limit * 2) {
+        pagination.state = paginationStates.atEnd;
+        return;
+      }
+
+      if (direction === -1 && pagination.offset === -pagination.limit) {
+        pagination.state = paginationStates.atBeginning;
+        return;
+      }
+      
+      pagination.state = paginationStates.inMiddle;
+    },
+    [updateDisplayedItems]
+  );
+
+  const handleProgressMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
       const uuid = message.header.uuid;
-    
-      if (message.header.type === protocol.types.GetFilesResponse) {
-        handleFilesMessage(message);
-        return;
-      }
 
-      if (message.header.type === protocol.types.DownloadingProgress) {
-        if (!state.downloadingsInProgess.includesUUID(uuid)) {
-          state.downloadingsInProgess.add(uuid, message.payload.id);
-          actualizeDisplayedItems();
-        }
-        return;
+      if (!state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.add(uuid, message.payload.id);
+        actualizeDisplayedItems();
       }
+    },
+    [actualizeDisplayedItems]
+  );
 
-      if (message.header.type === protocol.types.Done && 
-          state.deletionRequestUuid !== null &&
-          state.deletionRequestUuid === message.header.uuid) {
+  const handleDownloadingDoneMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+
+      var item = state.downloadingsInProgess.getByID(message.payload.id);
+
+      if (item.canceled) {
+        let uuid = protocol.uuidv4();
+        state.secondaryDeletionRequests.push(uuid);
+        let request = protocol.builDeleteFilesRequest(uuid, [item.id]);
+        send(request.serialize(), []);
+      }
+    },
+    []
+  );
+
+  const handleDoneMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.deletionRequestUuid !== null &&
+          state.deletionRequestUuid === uuid) {
         resetScrolling();
         state.deletionRequestUuid = null;
         return;
       }
 
-      if (message.header.type === protocol.types.Done && 
-          state.secondaryDeletionRequests.includes(uuid)) {
+      if (state.secondaryDeletionRequests.includes(uuid)) {
         resetScrolling();
         state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
         return;
       }
+    },
+    [resetScrolling]
+  );
 
-      if (message.header.type === protocol.types.DeleteFilesError && 
-          state.deletionRequestUuid !== null &&
+  const handleDeleteFilesErrorMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.deletionRequestUuid !== null &&
           state.deletionRequestUuid === message.header.uuid) {
         var failedIds = message.payload.failedIds
         var msg = `failed to delete files: ${failedIds}`;
@@ -287,8 +311,7 @@ export function FilesView() {
         return;
       }
 
-      if (message.header.type === protocol.types.DeleteFilesError && 
-          state.secondaryDeletionRequests.includes(uuid)) {
+      if (state.secondaryDeletionRequests.includes(uuid)) {
         var failedIds = message.payload.failedIds
         var msg = `failed to delete files: ${failedIds}`;
         console.error(msg);
@@ -298,43 +321,42 @@ export function FilesView() {
         setError(msg);
         return;
       }
+    },
+    [actualizeDisplayedItems]
+  );
 
-      if (message.header.type === protocol.types.Error && 
-          state.currentRequest !== null && 
+  const handleErrorMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.currentRequest !== null && 
           state.currentRequest.uuid === uuid) {
         console.log(`failed to load files: ${message.payload.reason}`);
         return;
       }
 
-      if (message.header.type === protocol.types.Error &&
-          state.downloadingsInProgess.includesUUID(uuid)) {
+      if (state.downloadingsInProgess.includesUUID(uuid)) {
         state.downloadingsInProgess.remove(uuid);
         actualizeDisplayedItems();
         setError(message.payload.reason);
         return;
       }
+    },
+    [actualizeDisplayedItems]
+  );
 
-      if (message.header.type === protocol.types.Canceled &&
-          state.downloadingsInProgess.includesUUID(uuid)) {
+  const handleCancelledMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.downloadingsInProgess.includesUUID(uuid)) {
         state.downloadingsInProgess.remove(uuid);
         actualizeDisplayedItems();
-        return
-      }
-
-      if (message.header.type === protocol.types.DownloadingDone) {
-        var item = state.downloadingsInProgess.getByID(message.payload.id);
-
-        if (item.canceled) {
-          let uuid = protocol.uuidv4();
-          state.secondaryDeletionRequests.push(uuid);
-          let request = protocol.builDeleteFilesRequest(uuid, [item.id]);
-          sendMessage(request.serialize(), []);
-        }
-
-        return;
       }
     },
-    [selectedFile, checkedItems]
+    [actualizeDisplayedItems]
   );
   
   const loadThreePages = useCallback(
@@ -367,7 +389,19 @@ export function FilesView() {
       const request = protocol.buildGetFilesRequest(
         state.currentRequest.uuid, limit, Math.max(0, offset));
     
-      sendMessage(request.serialize(), []);
+      send(request.serialize(), []);
+    },
+    []
+  );
+
+  // krutch to make it wait for session establishment
+  const loadInitialData = useCallback(
+    function () {
+      async function load() {
+        await new Promise(r => setTimeout(r, 100));
+        loadThreePages(0);
+      }
+      load();
     },
     []
   );
@@ -536,7 +570,7 @@ export function FilesView() {
     function(downloadingInProgress) {
       downloadingInProgress.canceled = true;
       const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
-      sendMessage(request.serialize(), []);
+      send(request.serialize(), []);
     },
     []
   );
@@ -565,16 +599,25 @@ export function FilesView() {
       if (idsToDelete.length > 0) {
         state.deletionRequestUuid = protocol.uuidv4();
         const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
-        sendMessage(request.serialize(), []);
+        send(request.serialize(), []);
       }
     },
     []
   );
 
-  // Effects
+  // Message hooks
 
-  useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
-  useEffect(() => loadThreePages(0), []);
+  useGetFilesResponseMessage(handleFilesMessage);
+  useDownloadingProgressMessage(handleProgressMessage);
+  useDownloadingDoneMessage(handleDownloadingDoneMessage);
+  useDeleteFilesErrorMessage(handleDeleteFilesErrorMessage);
+  useDoneMessage(handleDoneMessage);
+  useDeleteFilesErrorMessage(handleDeleteFilesErrorMessage);
+  useErrorMessage(handleErrorMessage);
+  useCanceledMessage(handleCancelledMessage);
+
+  // Effects
+  useEffect(() => loadInitialData(), []);
 
   // Rendering
 
