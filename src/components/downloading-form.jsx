@@ -4,62 +4,43 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/index';
 import { DownloadingState } from './states/downloading-state';
+import * as protocol from '../protocol/index';
+import { useErrorMessage, useDownloadingProgressMessage } from '../protocol/hooks';
 
 export function DownloadingForm({ setSelectedFile }) {
-  const { lastMessage, sendMessage } = useWebSocketData();
+  const { send } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
 
-  useEffect(() => {
-    if (dlState === null || lastMessage === null) {
-      return;
-    }
+  // Methods
 
-    const handleMessage = async(lastMessage) => {
-      const message = await protocol.parseMessageLegacy(lastMessage);
-
-      if (dlState.uuid !== message.header.uuid) {
+  const handleErrorMessage = useCallback(
+    function(message) {
+      if (dlState === null || dlState.uuid !== message.header.uuid) {
         return;
       }
 
-      if (message.header.type === protocol.types.Error) {
-        setDlState((prev) => {
-          const state = new DownloadingState();
-          state.copy(prev);
-          state.error = message.payload.reason;
-          return state;
-        });
-      } else if (message.header.type === protocol.types.DownloadingProgress) {
-        setDlState((prev) => {
-          const state = new DownloadingState();
+      const state = dlState.clone();
+      state.error = message.payload.reason;
+      setDlState(state);
+    },
+    [dlState]
+  );
 
-          if (prev !== null) {
-            state.copy(prev);
-          }
-
-          setSelectedFile(message.payload.id);
-          state.percentage = message.payload.percentage;
-          return state;
-        });
-      } else if (message.header.type === protocol.types.DownloadingDone) {
-        setDlState((prev) => {
-          const state = new DownloadingState();
-
-          if (prev !== null) {
-            state.copy(prev);
-          }
-          
-          state.done = true;
-          return state;
-        });
-      } else {
-        console.log(`unable to handle message: ${message}`);
+  const handleProgressMessage = useCallback(
+    function(message) {
+      if (dlState === null || dlState.uuid !== message.header.uuid) {
+        return;
       }
-    };
 
-    handleMessage(lastMessage);
-  }, [lastMessage]);
+      const state = dlState.clone();
+      state.percentage = message.payload.percentage;
+      setDlState(state);
+      
+      setSelectedFile(message.payload.id);
+    },
+    [dlState]
+  );
 
   const download = useCallback(
     function(formData) {
@@ -74,9 +55,17 @@ export function DownloadingForm({ setSelectedFile }) {
 
       const url = formData.get("url");
       const request = protocol.buildDownloadingRequest(state.uuid, url);
-      sendMessage(request.serialize(), []);
-    }
+      send(request.serialize(), []);
+    },
+    [dlState]
   );
+
+  // Message hooks
+
+  useErrorMessage(handleErrorMessage);
+  useDownloadingProgressMessage(handleProgressMessage);
+
+  // Rendering
 
   if (dlState === null) {
     return (

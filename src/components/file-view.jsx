@@ -40,7 +40,7 @@ export function FileView({ selectedFile }) {
   // Methods
 
   const handleMessage = useCallback(
-    async function(message) {
+    function(message) {
       if (message.header.uuid === state.uuid) {
         setState((prev) => {
           var newState = prev.clone();

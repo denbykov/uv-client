@@ -3,12 +3,10 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
-import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/index';
 import { DownloadingState } from './states/downloading-state';
+import { useDownloadingProgressMessage, useDownloadingDoneMessage } from '../protocol/hooks';
 
 export function FileListItem({ index, item, selectedFile, setSelectedFile, checked, onCheckChanged }) {
-  const { lastMessage } = useWebSocketData();
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
 
@@ -16,15 +14,9 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
 
   // Methods
 
-  const handleMessage = useCallback(
-    async function(lastMessage) {
-      if (lastMessage === null) {
-        return;
-      }
-    
-      const message = await protocol.parseMessageLegacy(lastMessage);
-
-      if (message.header.type === protocol.types.DownloadingProgress && message.payload.id === item.id) {
+  const handleDoneMessage = useCallback(
+    function(message) {
+      if (message.payload.id === item.id) {
         setDlState((prev) => {
           var newState = new DownloadingState();
           
@@ -38,19 +30,28 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
           return newState;
         });
       }
+    },
+    []
+  );
 
-      if (message.header.type === protocol.types.DownloadingDone && message.payload.id === item.id) {
-        setItemStatus("f");
-        setDlState(null);
+  const handleProgressMessage = useCallback(
+    function(message) {
+      if (message.payload.id === item.id) {
+      setItemStatus("f");
+      setDlState(null);
       }
     },
-    [dlState]
+    []
   );
 
   // Effects
 
-  useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
   useEffect(() => {setIsChecked(checked)}, [checked]);
+
+  // Message hooks
+
+  useDownloadingProgressMessage(handleProgressMessage);
+  useDownloadingDoneMessage(handleDoneMessage);
 
   // Rendering
 
