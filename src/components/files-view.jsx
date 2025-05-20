@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/message';
+import * as protocol from '../protocol/index';
 import { DownloadingForm } from './downloading-form.jsx';
 import { FileListItem } from './file-list-item.jsx';
 import { FileView } from './file-view.jsx';
@@ -121,7 +121,7 @@ class Items {
 }
 
 export function FilesView() {
-  const { lastMessage, sendMessage } = useWebSocketData();
+  const { lastMessage, sendMessage, send } = useWebSocketData();
   const stateRef = useRef(new State());
   const [items, setItems] = useState(new Items());
   const [error, setError] = useState(null);
@@ -240,7 +240,7 @@ export function FilesView() {
     
       const state = stateRef.current;
     
-      const message = await protocol.parseMessage(lastMessage);
+      const message = await protocol.parseMessageLegacy(lastMessage);
       const uuid = message.header.uuid;
     
       if (message.header.type === protocol.types.GetFilesResponse) {

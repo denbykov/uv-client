@@ -134,8 +134,7 @@ export function builDeleteFilesRequest(uuid, ids) {
   )
 }
 
-export async function parseMessage(lastMessage) {
-  const dataBuffer = await lastMessage.data.arrayBuffer();
+function parseMessageBase(dataBuffer) {
   const data = new Uint8Array(dataBuffer);
   const preParsedMessage = Message.parse(data);
 
@@ -149,6 +148,16 @@ export async function parseMessage(lastMessage) {
     preParsedMessage.payload = payload;
     return preParsedMessage;
   }
+}
+
+export async function parseMessageLegacy(lastMessage) {
+  const dataBuffer = await lastMessage.data.arrayBuffer();
+  return parseMessageBase(dataBuffer);
+}
+
+export async function parseMessage(message) {
+  const dataBuffer = await message.arrayBuffer();
+  return parseMessageBase(dataBuffer);
 }
 
 export {

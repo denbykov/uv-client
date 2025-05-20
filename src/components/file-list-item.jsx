@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/message';
+import * as protocol from '../protocol/index';
 import { DownloadingState } from './states/downloading-state';
 
 export function FileListItem({ index, item, selectedFile, setSelectedFile, checked, onCheckChanged }) {
@@ -22,7 +22,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
         return;
       }
     
-      const message = await protocol.parseMessage(lastMessage);
+      const message = await protocol.parseMessageLegacy(lastMessage);
 
       if (message.header.type === protocol.types.DownloadingProgress && message.payload.id === item.id) {
         setDlState((prev) => {
