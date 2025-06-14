@@ -81,7 +81,6 @@ class State {
     this.downloadingsInProgess = new DownloadingsInProgess();
     this.checkedItems = [];
     
-    this.deletionRequestUuid = null;
     this.secondaryDeletionRequests = [];
   }
 
@@ -109,10 +108,14 @@ class Items {
   }
 }
 
-export function ItemList({ sendRequest, lastResponse }) {
+export function ItemList({ 
+  sendLoadPagesRequest,
+  sendDeleteFilesRequest,
+  lastResponse,
+  refresh, setRefresh,
+  resetScrolling, setResetScrolling}) {
   const stateRef = useRef(new State());
   const [items, setItems] = useState(new Items());
-  const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [checkedItems, setCheckedItems] = useState([]);
 
@@ -143,7 +146,7 @@ export function ItemList({ sendRequest, lastResponse }) {
         throw new Error(`offset is larger than total number of items: ${offset}, total: ${total}`)
       }
 
-      sendRequest(direction, limit, offset);
+      sendLoadPagesRequest(direction, limit, offset);
     },
     []
   );
@@ -220,6 +223,16 @@ export function ItemList({ sendRequest, lastResponse }) {
     []
   );
 
+  const doRefresh = useCallback(
+    function() {
+      if (refresh) {
+        actualizeDisplayedItems();
+        setRefresh(false);
+      }
+    },
+    [refresh]
+  )
+
   const isChecked = useCallback(
     function(id) {
       return typeof checkedItems.find((item) => item === id) !== "undefined";
@@ -227,8 +240,12 @@ export function ItemList({ sendRequest, lastResponse }) {
     [checkedItems]
   );
 
-  const resetScrolling = useCallback(
+  const doResetScrolling = useCallback(
     function() {
+      if (!resetScrolling) {
+        return;
+      }
+
       const state = stateRef.current;
 
       if (isChecked(selectedFile)) {
@@ -242,8 +259,10 @@ export function ItemList({ sendRequest, lastResponse }) {
       loadThreePages(0);
 
       setCheckedItems([]);
+
+      setResetScrolling(false);
     },
-    [selectedFile, checkedItems]
+    [selectedFile, checkedItems, resetScrolling]
   );
 
   const calculateScrollingConstants = useCallback(
@@ -430,10 +449,6 @@ export function ItemList({ sendRequest, lastResponse }) {
   const onDeleteFilesClicked = useCallback(
     function() {
       const state = stateRef.current;
-      if (state.deletionRequestUuid !== null) {
-        console.error(`other delteion request is in progress, uuid: ${state.deletionRequestUuid}`)
-        return
-      }
 
       var idsToDelete = [];
 
@@ -449,9 +464,7 @@ export function ItemList({ sendRequest, lastResponse }) {
       }
 
       if (idsToDelete.length > 0) {
-        state.deletionRequestUuid = protocol.uuidv4();
-        const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
-        send(request.serialize(), []);
+        sendDeleteFilesRequest(idsToDelete);
       }
     },
     []
@@ -461,21 +474,13 @@ export function ItemList({ sendRequest, lastResponse }) {
 
   useEffect(loadInitialData, []);
   useEffect(handleLastResponse, [lastResponse]);
+  useEffect(doRefresh, [refresh]);
+  useEffect(doResetScrolling, [resetScrolling]);
 
   // Rendering
 
   return (
     <>
-      {error !== null && (
-        <div className="error holder">
-          <div className="error window">
-            <div className='label'>Error</div>
-            <div className='message'>{error}</div>
-            <button className='button' onClick={() => setError(null)}>Close</button>
-          </div>
-        </div>
-      )}
-
       <div className="view">
         {selectedFile === null && (
           <div className="main sub-view">

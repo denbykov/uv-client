@@ -87,7 +87,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
             <div>{item.id}</div>
             <div>{percentage}</div>
             <div>{item.source}</div>
-            <div>{item.status}</div>
+            <div>{itemStatus}</div>
             <div>{item.addedAt}</div>
           </div>
         </li>
@@ -113,7 +113,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
 
           <div>{item.id}</div>
           <div>{item.source}</div>
-          <div>{item.status}</div>
+          <div>{itemStatus}</div>
           <div>{item.addedAt}</div>
         </div>
       </li>
