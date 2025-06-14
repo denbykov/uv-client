@@ -120,12 +120,27 @@ export function buildCancelRequest(uuid) {
   )
 }
 
-export async function parseMessage(lastMessage) {
-  const dataBuffer = await lastMessage.data.arrayBuffer();
+export function builDeleteFilesRequest(uuid, ids) {
+  const payload = {
+    ids: ids,
+  }
+  
+  return new Message(
+    new Header(
+      types.DeleteFilesRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
+function parseMessageBase(dataBuffer) {
   const data = new Uint8Array(dataBuffer);
   const preParsedMessage = Message.parse(data);
 
   if (preParsedMessage.header.type == types.Done) {
+    return preParsedMessage;
+  } else if (preParsedMessage.header.type == types.Canceled) {
     return preParsedMessage;
   } else {
     const json = new TextDecoder().decode(preParsedMessage.payload);
@@ -133,6 +148,16 @@ export async function parseMessage(lastMessage) {
     preParsedMessage.payload = payload;
     return preParsedMessage;
   }
+}
+
+export async function parseMessageLegacy(lastMessage) {
+  const dataBuffer = await lastMessage.data.arrayBuffer();
+  return parseMessageBase(dataBuffer);
+}
+
+export async function parseMessage(message) {
+  const dataBuffer = await message.arrayBuffer();
+  return parseMessageBase(dataBuffer);
 }
 
 export {

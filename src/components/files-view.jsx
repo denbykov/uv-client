@@ -4,36 +4,22 @@ import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/message';
 import { DownloadingForm } from './downloading-form.jsx';
 import { FileListItem } from './file-list-item.jsx';
 import { FileView } from './file-view.jsx';
+import { ItemList } from './generic/item-list.jsx';
+import { ItemListHeader } from './generic/item-list-header.jsx';
 
-const paginationStates = {
-  atBeginning: "atBeginning",
-  inMiddle: "inMiddle",
-  atEnd: "atEnd",
-};
-
-class PaginationData {
-  constructor() {
-    this.limit = 15
-    this.offset = -this.limit
-    this.total = 0
-
-    this.state = paginationStates.atBeginning;
-    this.items = null
-
-    this.itemsLoaded = 0
-  }
-}
-
-class ScrollingData {
-  constructor() {
-    this.itemHeight = 0
-    this.pageHeight = 0
-  }
-}
+import * as protocol from '../protocol/index';
+import { 
+  useDownloadingProgressMessage,
+  useDownloadingDoneMessage,
+  useErrorMessage,
+  useDoneMessage,
+  useGetFilesResponseMessage,
+  useDeleteFilesErrorMessage,
+  useCanceledMessage
+} from '../protocol/hooks';
 
 class CurrentRequest {
   constructor(uuid, direction, offset) {
@@ -43,321 +29,305 @@ class CurrentRequest {
   }
 }
 
-class State {
+class DownloadingInProgress {
+    constructor(uuid, id) {
+      this.uuid = uuid;
+      this.id = id;
+      this.canceled = false;
+    }
+}
+
+class DownloadingsInProgess {
   constructor() {
-    this.currentRequest = null;
-    this.pagination = new PaginationData();
-    this.scrolling = new ScrollingData();
-    this.downloadingsInProgess = [];
+    this.items = [];
+  }
+
+  add = function(uuid, id) {
+    this.items.push(new DownloadingInProgress(uuid, id));
+  }
+
+  includesUUID = function(uuid) {
+    return typeof this.items.find((item) => item.uuid === uuid) !== "undefined";
+  }
+
+  includesID = function(id) {
+    return typeof this.items.find((item) => item.id === id) !== "undefined";
+  }
+
+  remove = function(uuid) {
+    this.items = this.items.filter((el) => el === uuid);
+  }
+
+  getByID = function(id) {
+    var item = this.items.find((item) => item.id === id);
+    if (typeof item === "undefined") {
+      return null;
+    }
+
+    return item;
   }
 }
 
-class Items {
+class State {
   constructor() {
-    this.displayedItems = [];
-    this.total = 0;
-    this.currentPage = 0;
-    this.pageCount = 0;
+    this.currentRequest = null;
+    this.deletionRequestUuid = null;
+    this.downloadingsInProgess = new DownloadingsInProgess();
   }
+}
 
-  copy = function(other) {
-    this.displayedItems = other.displayedItems;
-    this.total = other.total;
-    this.currentPage = other.currentPage;
-    this.pageCount = other.pageCount;
+class LastResponse {
+  constructor() {
+    this.items = [];
+    this.total = 0;
+    this.direction = 0;
+    this.offset = 0;
   }
 }
 
 export function FilesView() {
-  const { lastMessage, sendMessage } = useWebSocketData();
   const stateRef = useRef(new State());
-  const [items, setItems] = useState(new Items());
-  const [error, setError] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const { send } = useWebSocketData();
+  const [ error, setError ] = useState(null);
+  const [ lastResponse, setLastResponse ] = useState(new LastResponse());
+  const [ refresh, setRefresh ] = useState(new Boolean(false));
+  const [ resetScrolling, setResetScrolling ] = useState(new Boolean(false));
+  const [ selectedFile, setSelectedFile ] = useState(null);
+  const [ checkedItems, setCheckedItems ] = useState([]);
 
   // Methods
 
-  const updateDisplayedItems = useCallback(
-    function() {
+  const sendLoadPagesRequest = useCallback(
+    function(direction, limit, offset) {
       const state = stateRef.current;
-      const pagination = state.pagination;
-
-      var items = new Items();
-      items.displayedItems = pagination.items;
-      state.pagination.itemsLoaded = items.displayedItems.length;
-      items.total = pagination.total;
-      items.pageCount = Math.ceil(pagination.total / pagination.limit);
-
-      setItems((prev) => {
-        if (prev.currentPage == 0) {
-          items.currentPage = 1;
-        } else {
-          items.currentPage = prev.currentPage;
-        }
-        return items;
-      });
-    },
-    []
-  );
-
-  const updateCurrentPageNumber = useCallback(
-    function(delta) {
-      setItems((prev) => {
-        var items = new Items();
-        items.copy(prev);
-        items.currentPage += delta;
-        return items;
-      });
-    },
-    []
-  );
-
-  const handleFilesMessage = useCallback(
-    function(message) {
-      const state = stateRef.current;
-      const pagination = state.pagination;
-      pagination.total = message.payload.total;
-      pagination.items = message.payload.files;
-      updateDisplayedItems();
-
-      const request = state.currentRequest;
-
-      pagination.offset = request.offset;
-      const direction = request.direction;
-
-      state.currentRequest = null;
-      
-      if (request.direction === 0) {
-        return;
-      }
-
-      if (direction === +1 && pagination.total <= pagination.offset + pagination.limit * 2) {
-        pagination.state = paginationStates.atEnd;
-        return;
-      }
-
-      if (direction === -1 && pagination.offset === -pagination.limit) {
-        pagination.state = paginationStates.atBeginning;
-        return;
-      }
-      
-      pagination.state = paginationStates.inMiddle;
-    },
-    []
-  );
-
-  const actualizeDisplayedItems = useCallback(
-    function() {
-      loadThreePages(0);
-    },
-    []
-  );
-  
-  const handleMessage = useCallback(
-    async function(lastMessage) {
-      if (lastMessage === null) {
-        return;
-      }
-    
-      const state = stateRef.current;
-    
-      const message = await protocol.parseMessage(lastMessage);
-      const uuid = message.header.uuid;
-    
-      if (message.header.type === protocol.types.GetFilesResponse) {
-        handleFilesMessage(message);
-        return;
-      }
-
-      if (message.header.type === protocol.types.DownloadingProgress) {
-        if (!state.downloadingsInProgess.includes(uuid)) {
-          state.downloadingsInProgess.push(uuid);
-          actualizeDisplayedItems();
-        }
-        return;
-      }
-
-      if (message.header.type === protocol.types.Error && 
-          state.currentRequest !== null && 
-          state.currentRequest.uuid === uuid) {
-        console.log(`failed to load files: ${message.payload.reason}`);
-        return;
-      }
-
-      if (message.header.type === protocol.types.Error) {
-        if (state.downloadingsInProgess.includes(uuid)) {
-          state.downloadingsInProgess = state.downloadingsInProgess.filter((el) => el === uuid);
-          actualizeDisplayedItems();
-          setError(message.payload.reason);
-        }
-      }
-    },
-    []
-  );
-  
-  const loadThreePages = useCallback(
-    function (direction) {
-      const state = stateRef.current;
-
-      if (state.currentRequest !== null) {
-        throw new Error("unable to do paralel requests");
-      }
-
-      if (direction !== 0 && (direction > 1 || direction < -1)) {
-        throw new Error("direction argument should be in range [-1, 1]");
-      }
-      
-      const total = state.pagination.total;
-
-      var offset = 0;
-      if (state.pagination.state !== paginationStates.atBeginning) {
-        offset = state.pagination.offset + state.pagination.limit * direction
-      }
-      
-      const limit = state.pagination.limit * 3;
-      
-      if (offset > total) {
-        throw new Error(`offset is larger than total number of items: ${offset}, total: ${total}`)
-      }
-
       state.currentRequest = new CurrentRequest(protocol.uuidv4(), direction, offset);
     
       const request = protocol.buildGetFilesRequest(
         state.currentRequest.uuid, limit, Math.max(0, offset));
     
-      sendMessage(request.serialize(), []);
+      send(request.serialize(), []);
     },
     []
   );
 
-  const calculateScrollingConstants = useCallback(
-    function(event) {
-      const scrollHeight = event.currentTarget.scrollHeight;
-    
-      const state = stateRef.current;
-      const scrolling = state.scrolling;
-      const pagination = state.pagination;
-    
-      if (pagination.total > 0 && scrolling.itemHeight == 0) {
-        scrolling.itemHeight = scrollHeight / pagination.itemsLoaded;
-        scrolling.pageHeight = scrolling.itemHeight * pagination.limit;
-      }
+  const cancelDownloading = useCallback(
+    function(downloadingInProgress) {
+      downloadingInProgress.canceled = true;
+      const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
+      send(request.serialize(), []);
     },
     []
   );
 
-  const handleScrollAtBeginning = useCallback(
-    function(event) {
-      const scrollTop = event.currentTarget.scrollTop;
-      const offsetHeight = event.currentTarget.offsetHeight;
-      const scrollHeight = event.currentTarget.scrollHeight;
+  const deleteFiles = useCallback(
+    function() {
       const state = stateRef.current;
-      const scrolling = state.scrolling;
-
-      if (scrollTop >= scrolling.pageHeight) {
-        loadThreePages(+1);
-        updateCurrentPageNumber(+1);
-        return;
-      }
-
-      if (scrollTop + offsetHeight === scrollHeight) {
-        loadThreePages(+1);
-        updateCurrentPageNumber(+1);
-        return;
-      }
-    },
-    []
-  );
-
-  const handleScrollInMiddle = useCallback(
-    function(event) {
-      const scrollTop = event.currentTarget.scrollTop;
-      const offsetHeight = event.currentTarget.offsetHeight;
-      const scrollHeight = event.currentTarget.scrollHeight;
-      const state = stateRef.current;
-      const scrolling = state.scrolling;
-
-      if (scrollTop >= scrolling.pageHeight * 2) {
-        loadThreePages(+1);
-        updateCurrentPageNumber(+1);
-        return;
-      }
-
-      if (scrollTop + offsetHeight === scrollHeight) {
-        loadThreePages(+1);
-        updateCurrentPageNumber(+1);
+      if (state.deletionRequestUuid !== null) {
+        console.error(`other deletion request is in progress, uuid: ${state.deletionRequestUuid}`);
         return;
       }
       
-      if (scrollTop <= scrolling.pageHeight) {
-        loadThreePages(-1);
-        updateCurrentPageNumber(-1);
-        return;
+      var idsToDelete = [];
+
+      for (let i = 0; i < checkedItems.length; i++) {
+        var id = checkedItems[i];
+        var downloadingInProgress = state.downloadingsInProgess.getByID(id);
+
+        if (downloadingInProgress !== null) {
+          cancelDownloading(downloadingInProgress);
+        } else {
+          idsToDelete.push(id);
+        }
       }
+
+      if (idsToDelete.length > 0) {
+        state.deletionRequestUuid = protocol.uuidv4();
+        const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
+        send(request.serialize(), []);
+      }  
     },
-    []
+    [checkedItems]
   );
 
-  const handleScrollAtEnd = useCallback(
-    function(event) {
-      const scrollTop = event.currentTarget.scrollTop;
-      const offsetHeight = event.currentTarget.offsetHeight;
-      const scrollHeight = event.currentTarget.scrollHeight;
-
+  const handleFilesMessage = useCallback(
+    function(message) {
       const state = stateRef.current;
-      const scrolling = state.scrolling;
-      const pagination = state.pagination;
 
-      const scrollBottom = scrollTop + offsetHeight;
-      const lastPageSize = pagination.itemsLoaded - pagination.limit;
-      const lastPageHeight = lastPageSize * scrolling.itemHeight;
+      var lastResponse = new LastResponse();
+      lastResponse.items = message.payload.files;
+      lastResponse.total = message.payload.total;
+      lastResponse.direction = state.currentRequest.direction;
+      lastResponse.offset = state.currentRequest.offset;
 
-      if (scrollBottom <= scrollHeight - lastPageHeight) {        
-        loadThreePages(-1);
-        updateCurrentPageNumber(-1);
-        return;
-      }
+      setLastResponse(lastResponse);
+
+      state.currentRequest = null;
     },
     []
   );
-  
-  const handleScroll = useCallback(
-    function(event) {
-      const offsetHeight = event.currentTarget.offsetHeight;
 
+  const handleProgressMessage = useCallback(
+    function(message) {
       const state = stateRef.current;
-      const pagination = state.pagination;
-      const scrolling = state.scrolling;
+      const uuid = message.header.uuid;
 
-      calculateScrollingConstants(event);
-
-      if (state.currentRequest !== null) {
-        return;
-      }
-
-      if (scrolling.pageHeight < offsetHeight) {
-        throw Error("current scrolling implementation requires offset height to be larger than page height");
-      }
-
-      if (pagination.state === paginationStates.atBeginning) {
-        handleScrollAtBeginning(event);
-      }
-
-      if (pagination.state === paginationStates.inMiddle) {
-        handleScrollInMiddle(event);
-      }
-
-      if (pagination.state === paginationStates.atEnd) {
-        handleScrollAtEnd(event);
+      if (!state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.add(uuid, message.payload.id);
+        setRefresh(true);
       }
     },
     []
   );
 
-  // Effects
+  const handleErrorMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
 
-  useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
-  useEffect(() => loadThreePages(0), []);
+      if (state.currentRequest !== null && 
+          state.currentRequest.uuid === uuid) {
+        console.log(`failed to load files: ${message.payload.reason}`);
+        return;
+      }
+
+      if (state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.remove(uuid);
+        setRefresh(true);
+        setError(message.payload.reason);
+        return;
+      }
+    },
+    []
+  );
+
+  const handleDownloadingDoneMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+
+      var item = state.downloadingsInProgess.getByID(message.payload.id);
+
+      if (item.canceled) {
+        let uuid = protocol.uuidv4();
+        state.secondaryDeletionRequests.push(uuid);
+        let request = protocol.builDeleteFilesRequest(uuid, [item.id]);
+        send(request.serialize(), []);
+      }
+    },
+    []
+  );
+
+  const handleDeleteFilesErrorMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.deletionRequestUuid !== null &&
+          state.deletionRequestUuid === message.header.uuid) {
+        var failedIds = message.payload.failedIds
+        var msg = `failed to delete files: ${failedIds}`;
+        console.error(msg);
+        
+        setCheckedItems((prev) => {
+          return prev.filter((item) => failedIds.includes(item));
+        });
+
+        setRefresh(true);
+        setError(msg);
+        state.deletionRequestUuid = null;
+        return;
+      }
+
+      if (state.secondaryDeletionRequests.includes(uuid)) {
+        var failedIds = message.payload.failedIds
+        var msg = `failed to delete files: ${failedIds}`;
+        console.error(msg);
+        
+        state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
+
+        setError(msg);
+        return;
+      }
+    },
+    [checkedItems]
+  );
+
+  const handleDoneMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.deletionRequestUuid !== null &&
+          state.deletionRequestUuid === uuid) {
+        setCheckedItems([]);
+        setResetScrolling(true);
+        state.deletionRequestUuid = null;
+        return;
+      }
+
+      if (state.secondaryDeletionRequests.includes(uuid)) {
+        setCheckedItems([]);
+        setResetScrolling(true);
+        state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
+        return;
+      }
+    },
+    []
+  );
+
+  const handleCancelledMessage = useCallback(
+    function(message) {
+      const state = stateRef.current;
+      const uuid = message.header.uuid;
+
+      if (state.downloadingsInProgess.includesUUID(uuid)) {
+        state.downloadingsInProgess.remove(uuid);
+        setRefresh(true);
+      }
+    },
+    []
+  );
+
+  const isChecked = useCallback(
+    function(id) {
+      return typeof checkedItems.find((item) => item === id) !== "undefined";
+    },
+    [checkedItems]
+  );
+
+  const onCheckChanged = useCallback(
+    function(id, checked) {
+      if (checked === true) {
+        setCheckedItems((prev) => {
+          var newCheckedItems = prev.slice();
+          var containsItem = typeof prev.find((item) => item === id) !== "undefined";
+
+          if (!containsItem) {
+            newCheckedItems.push(id);
+          }
+
+          return newCheckedItems;
+        });
+      }
+
+      if (checked === false) {
+        setCheckedItems((prev) => {
+          return prev.filter((item) => item !== id);
+        });
+      }
+    },
+    [checkedItems]
+  );
+
+  // Message hooks
+
+  useGetFilesResponseMessage(handleFilesMessage);
+  useDownloadingProgressMessage(handleProgressMessage);
+  useDownloadingDoneMessage(handleDownloadingDoneMessage);
+  useDeleteFilesErrorMessage(handleDeleteFilesErrorMessage);
+  useDoneMessage(handleDoneMessage);
+  useDeleteFilesErrorMessage(handleDeleteFilesErrorMessage);
+  useErrorMessage(handleErrorMessage);
+  useCanceledMessage(handleCancelledMessage);
 
   // Rendering
 
@@ -385,30 +355,21 @@ export function FilesView() {
           <div className="main sub-view">
           <FileView selectedFile={selectedFile}/>
         </div>
-        )} 
+        )}
         <div className="side sub-view file-list">
-          <div className="header">
-            <div>
-              Nothing yet
-            </div>
-            <button className="add-item button" onClick={() => setSelectedFile(null)}>+</button>
-          </div>
-          <div className="body" onScroll={(event) => {handleScroll(event)}}>
-            <ul>
-              {items.displayedItems.map((item, index) => (
-                <FileListItem 
-                  key={item.id} 
-                  index={index}
-                  item={item}
-                  setSelectedFile={setSelectedFile} 
-                />
-              ))}
-            </ul>
-          </div>
-          <div className="footer">
-            <div>page {items.currentPage} of {items.pageCount}</div>
-            <div>total {items.total}</div>
-          </div>
+          <ItemListHeader
+            checkedItems={checkedItems} setCheckedItems={setCheckedItems}
+            deleteItems={deleteFiles}
+          />
+          <ItemList 
+            childComponent={FileListItem}
+            sendLoadPagesRequest={sendLoadPagesRequest}
+            lastResponse={lastResponse}
+            refresh={refresh} setRefresh={setRefresh}
+            resetScrolling={resetScrolling} setResetScrolling={setResetScrolling}
+            selectedItem={selectedFile} setSelectedItem={setSelectedFile}
+            isChecked={isChecked} onCheckChanged={onCheckChanged}
+          />
         </div>
       </div>
     </>

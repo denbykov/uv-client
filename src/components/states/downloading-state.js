@@ -8,10 +8,7 @@ export class DownloadingState {
     this.uuid = null;
   }
 
-  copy(other) {
-    this.percentage = other.percentage;
-    this.error = other.error;
-    this.done = other.done;
-    this.uuid = other.uuid;
+  clone() {
+    return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
   }
 }

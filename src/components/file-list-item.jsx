@@ -3,51 +3,50 @@
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
-import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/message';
 import { DownloadingState } from './states/downloading-state';
+import { useDownloadingProgressMessage, useDownloadingDoneMessage } from '../protocol/hooks';
 
-export function FileListItem({ index, item, setSelectedFile }) {
-  const { lastMessage } = useWebSocketData();
+export function FileListItem({ index, item, selectedItem, setSelectedItem, checked, onCheckChanged }) {
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
 
+  const [isChecked, setIsChecked] = useState(checked);
+
   // Methods
 
-  const handleMessage = useCallback(
-    async function(lastMessage) {
-      if (lastMessage === null) {
-        return;
-      }
-    
-      const message = await protocol.parseMessage(lastMessage);
-
-      if (message.header.type === protocol.types.DownloadingProgress && message.payload.id === item.id) {
+  const handleProgressMessage = useCallback(
+    function(message) {
+      if (message.payload.id === item.id) {
         setDlState((prev) => {
-          var newState = new DownloadingState();
-          
-          if (prev !== null) {
-            newState.copy(prev); 
-          }
-
+          var newState = prev.clone();
           newState.uuid = message.header.uuid;
           newState.percentage = message.payload.percentage;
-
+          
           return newState;
         });
       }
-
-      if (message.header.type === protocol.types.DownloadingDone && message.payload.id === item.id) {
+    },
+    []
+  );
+  
+  const handleDoneMessage = useCallback(
+    function(message) {
+      if (message.payload.id === item.id) {
         setItemStatus("f");
         setDlState(null);
       }
     },
-    [dlState]
+    []
   );
 
   // Effects
 
-  useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
+  useEffect(() => {setIsChecked(checked)}, [checked]);
+
+  // Message hooks
+
+  useDownloadingProgressMessage(handleProgressMessage);
+  useDownloadingDoneMessage(handleDoneMessage);
 
   // Rendering
 
@@ -56,6 +55,8 @@ export function FileListItem({ index, item, setSelectedFile }) {
     newState.percentage = 0;
     setDlState(newState);
   }
+
+  const isSelected = selectedItem === item.id;
 
   if (dlState !== null) {
     var percentageValue = dlState.percentage.toFixed(0);
@@ -67,13 +68,26 @@ export function FileListItem({ index, item, setSelectedFile }) {
     return (
       <>
         <li>
-          <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
+          <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedItem(item.id)}>
             <div className="progress-animation">
             </div>
+
+            <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={(e) => {
+                  onCheckChanged(item.id, e.target.checked);
+                  setIsChecked(e.target.checked);
+                }}
+              />
+              <span className="checkmark"></span>
+            </label>
+
             <div>{item.id}</div>
             <div>{percentage}</div>
             <div>{item.source}</div>
-            <div>{item.status}</div>
+            <div>{itemStatus}</div>
             <div>{item.addedAt}</div>
           </div>
         </li>
@@ -84,10 +98,22 @@ export function FileListItem({ index, item, setSelectedFile }) {
   return (
     <>
       <li>
-        <div className='file-list-item' key={index} onClick={() => setSelectedFile(item.id)}>
+        <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedItem(item.id)}>
+          <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => {
+                onCheckChanged(item.id, e.target.checked);
+                setIsChecked(e.target.checked);
+              }}
+            />
+            <span className="checkmark"></span>
+          </label>
+
           <div>{item.id}</div>
           <div>{item.source}</div>
-          <div>{item.status}</div>
+          <div>{itemStatus}</div>
           <div>{item.addedAt}</div>
         </div>
       </li>

@@ -4,7 +4,8 @@ import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
 import { useWebSocketData } from '../websocket-context';
-import * as protocol from '../protocol/message';
+import * as protocol from '../protocol/index';
+import { useGetFileResponseMessage } from '../protocol/hooks';
 
 class State {
   constructor() {
@@ -18,15 +19,8 @@ class State {
     this.updatedAt = null;
   }
 
-  copy(other) {
-    this.uuid = other.uuid;
-
-    this.path = other.path;
-    this.sourceUrl = other.sourceUrl;
-    this.source = other.source;
-    this.status = other.status;
-    this.addedAt = other.addedAt;
-    this.updatedAt = other.updatedAt;
+  clone() {
+    return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
   }
 
   fill(message) {
@@ -40,23 +34,17 @@ class State {
 }
 
 export function FileView({ selectedFile }) {
-  const { lastMessage, sendMessage } = useWebSocketData();
+  const { send } = useWebSocketData();
   const [state, setState] = useState(new State());
 
   // Methods
 
   const handleMessage = useCallback(
-    async function(lastMessage) {
-      if (lastMessage === null) {
-        return;
-      }
-    
-      const message = await protocol.parseMessage(lastMessage);
-
-      if (message.header.type === protocol.types.GetFileResponse && message.header.uuid === state.uuid) {
+    function(message) {
+      if (message.header.uuid === state.uuid) {
         setState((prev) => {
-          var newState = new State();
-          newState.copy(prev);
+          var newState = prev.clone();
+
           newState.fill(message.payload);
           return newState;
         });
@@ -76,16 +64,18 @@ export function FileView({ selectedFile }) {
       });
       
       const request = protocol.buildGetFileRequest(uuid, selectedFile);
-    
-      sendMessage(request.serialize(), []);
+      send(request.serialize());
     },
     [selectedFile]
   );
 
   // Effects
 
-  useEffect(() => {handleMessage(lastMessage)}, [lastMessage]);
   useEffect(() => loadFile(), [selectedFile]);
+
+  // Message hooks
+
+  useGetFileResponseMessage(handleMessage);
 
   // Rendering
 
