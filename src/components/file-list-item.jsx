@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { DownloadingState } from './states/downloading-state';
 import { useDownloadingProgressMessage, useDownloadingDoneMessage } from '../protocol/hooks';
 
-export function FileListItem({ index, item, selectedFile, setSelectedFile, checked, onCheckChanged }) {
+export function FileListItem({ index, item, selectedItem, setSelectedItem, checked, onCheckChanged }) {
   const [dlState, setDlState] = useState(null);
   const [itemStatus, setItemStatus] = useState(item.status);
 
@@ -56,7 +56,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
     setDlState(newState);
   }
 
-  const isSelected = selectedFile === item.id;
+  const isSelected = selectedItem === item.id;
 
   if (dlState !== null) {
     var percentageValue = dlState.percentage.toFixed(0);
@@ -68,7 +68,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
     return (
       <>
         <li>
-          <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedFile(item.id)}>
+          <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedItem(item.id)}>
             <div className="progress-animation">
             </div>
 
@@ -98,7 +98,7 @@ export function FileListItem({ index, item, selectedFile, setSelectedFile, check
   return (
     <>
       <li>
-        <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedFile(item.id)}>
+        <div className={'file-list-item' + (isSelected ? " selected" : "")} key={index} onClick={() => setSelectedItem(item.id)}>
           <label className="checkbox-container" onClick={(e) => e.stopPropagation()}>
             <input
               type="checkbox"

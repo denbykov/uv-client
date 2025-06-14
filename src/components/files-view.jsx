@@ -2,13 +2,14 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FaTrash } from 'react-icons/fa';
 
 import { useWebSocketData } from '../websocket-context';
 import { DownloadingForm } from './downloading-form.jsx';
 import { FileListItem } from './file-list-item.jsx';
 import { FileView } from './file-view.jsx';
 import { ItemList } from './generic/item-list.jsx';
+import { ItemListHeader } from './generic/item-list-header.jsx';
+
 import * as protocol from '../protocol/index';
 import { 
   useDownloadingProgressMessage,
@@ -87,10 +88,12 @@ class LastResponse {
 export function FilesView() {
   const stateRef = useRef(new State());
   const { send } = useWebSocketData();
-  const [error, setError] = useState(null);
+  const [ error, setError ] = useState(null);
   const [ lastResponse, setLastResponse ] = useState(new LastResponse());
   const [ refresh, setRefresh ] = useState(new Boolean(false));
   const [ resetScrolling, setResetScrolling ] = useState(new Boolean(false));
+  const [ selectedFile, setSelectedFile ] = useState(null);
+  const [ checkedItems, setCheckedItems ] = useState([]);
 
   // Methods
 
@@ -107,19 +110,43 @@ export function FilesView() {
     []
   );
 
-  const sendDeleteFilesRequest = useCallback(
-    function(idsToDelete) {
+  const cancelDownloading = useCallback(
+    function(downloadingInProgress) {
+      downloadingInProgress.canceled = true;
+      const request = protocol.buildCancelRequest(downloadingInProgress.uuid);
+      send(request.serialize(), []);
+    },
+    []
+  );
+
+  const deleteFiles = useCallback(
+    function() {
       const state = stateRef.current;
       if (state.deletionRequestUuid !== null) {
         console.error(`other deletion request is in progress, uuid: ${state.deletionRequestUuid}`);
         return;
       }
-    
-      state.deletionRequestUuid = protocol.uuidv4();
-      const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
-      send(request.serialize(), []);
+      
+      var idsToDelete = [];
+
+      for (let i = 0; i < checkedItems.length; i++) {
+        var id = checkedItems[i];
+        var downloadingInProgress = state.downloadingsInProgess.getByID(id);
+
+        if (downloadingInProgress !== null) {
+          cancelDownloading(downloadingInProgress);
+        } else {
+          idsToDelete.push(id);
+        }
+      }
+
+      if (idsToDelete.length > 0) {
+        state.deletionRequestUuid = protocol.uuidv4();
+        const request = protocol.builDeleteFilesRequest(state.deletionRequestUuid, idsToDelete);
+        send(request.serialize(), []);
+      }  
     },
-    []
+    [checkedItems]
   );
 
   const handleFilesMessage = useCallback(
@@ -200,9 +227,9 @@ export function FilesView() {
         var msg = `failed to delete files: ${failedIds}`;
         console.error(msg);
         
-        state.checkedItems = state.checkedItems.filter((item) => failedIds.includes(item));
-        // ToDo: Fix this
-        setCheckedItems(state.checkedItems);
+        setCheckedItems((prev) => {
+          return prev.filter((item) => failedIds.includes(item));
+        });
 
         setRefresh(true);
         setError(msg);
@@ -221,7 +248,7 @@ export function FilesView() {
         return;
       }
     },
-    []
+    [checkedItems]
   );
 
   const handleDoneMessage = useCallback(
@@ -231,12 +258,14 @@ export function FilesView() {
 
       if (state.deletionRequestUuid !== null &&
           state.deletionRequestUuid === uuid) {
+        setCheckedItems([]);
         setResetScrolling(true);
         state.deletionRequestUuid = null;
         return;
       }
 
       if (state.secondaryDeletionRequests.includes(uuid)) {
+        setCheckedItems([]);
         setResetScrolling(true);
         state.secondaryDeletionRequests = state.secondaryDeletionRequests.filter((item) => item !== uuid);
         return;
@@ -256,6 +285,37 @@ export function FilesView() {
       }
     },
     []
+  );
+
+  const isChecked = useCallback(
+    function(id) {
+      return typeof checkedItems.find((item) => item === id) !== "undefined";
+    },
+    [checkedItems]
+  );
+
+  const onCheckChanged = useCallback(
+    function(id, checked) {
+      if (checked === true) {
+        setCheckedItems((prev) => {
+          var newCheckedItems = prev.slice();
+          var containsItem = typeof prev.find((item) => item === id) !== "undefined";
+
+          if (!containsItem) {
+            newCheckedItems.push(id);
+          }
+
+          return newCheckedItems;
+        });
+      }
+
+      if (checked === false) {
+        setCheckedItems((prev) => {
+          return prev.filter((item) => item !== id);
+        });
+      }
+    },
+    [checkedItems]
   );
 
   // Message hooks
@@ -283,13 +343,35 @@ export function FilesView() {
         </div>
       )}
 
-      <ItemList 
-        sendLoadPagesRequest={sendLoadPagesRequest}
-        sendDeleteFilesRequest={sendDeleteFilesRequest}
-        lastResponse={lastResponse}
-        refresh={refresh} setRefresh={setRefresh}
-        resetScrolling={resetScrolling} setResetScrolling={setResetScrolling}
-      />
+      <div className="view">
+        {selectedFile === null && (
+          <div className="main sub-view">
+          <DownloadingForm 
+            setSelectedFile={setSelectedFile}
+          />
+        </div>
+        )}
+        {selectedFile !== null && (
+          <div className="main sub-view">
+          <FileView selectedFile={selectedFile}/>
+        </div>
+        )}
+        <div className="side sub-view file-list">
+          <ItemListHeader
+            checkedItems={checkedItems} setCheckedItems={setCheckedItems}
+            deleteItems={deleteFiles}
+          />
+          <ItemList 
+            childComponent={FileListItem}
+            sendLoadPagesRequest={sendLoadPagesRequest}
+            lastResponse={lastResponse}
+            refresh={refresh} setRefresh={setRefresh}
+            resetScrolling={resetScrolling} setResetScrolling={setResetScrolling}
+            selectedItem={selectedFile} setSelectedItem={setSelectedFile}
+            isChecked={isChecked} onCheckChanged={onCheckChanged}
+          />
+        </div>
+      </div>
     </>
   );
 }
