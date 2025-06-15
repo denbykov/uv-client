@@ -20,8 +20,6 @@ function Application() {
   const { send } = useWebSocketHandler();
   const { view, setView } = useNavigation();
 
-  console.log(view);
-
   return <WebSocketContext.Provider value={{ send }}>
     <div className='app'>
       <NavigationBar view={view} setView={setView}/>

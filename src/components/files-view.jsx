@@ -90,15 +90,27 @@ export function FilesView() {
   const { send } = useWebSocketData();
   const [ error, setError ] = useState(null);
   const [ lastResponse, setLastResponse ] = useState(new LastResponse());
-  const [ refresh, setRefresh ] = useState(new Boolean(false));
-  const [ resetScrolling, setResetScrolling ] = useState(new Boolean(false));
+  const [ refresh, setRefresh ] = useState(false);
+  const [ resetScrolling, setResetScrolling ] = useState(false);
   const [ selectedFile, setSelectedFile ] = useState(null);
   const [ checkedItems, setCheckedItems ] = useState([]);
 
   // Methods
 
+  const init = useCallback(
+    function() {
+      stateRef.current = new State();
+
+      return () => {
+        console.log("leaving");
+      }
+    }
+  );
+
   const sendLoadPagesRequest = useCallback(
     function(direction, limit, offset) {
+      console.log(`loading request ${direction} ${limit} ${offset}`);
+
       const state = stateRef.current;
       state.currentRequest = new CurrentRequest(protocol.uuidv4(), direction, offset);
     
@@ -317,6 +329,10 @@ export function FilesView() {
     },
     [checkedItems]
   );
+
+  // Effects
+
+  useEffect(init, []);
 
   // Message hooks
 

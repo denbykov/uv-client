@@ -31,13 +31,11 @@ class ScrollingData {
 
 class State {
   constructor() {
-    this.currentRequest = null;
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
   }
 
   resetScrolling = function() {
-    this.currentRequest = null;
     this.pagination = new PaginationData();
     this.scrolling = new ScrollingData();
   }
@@ -76,10 +74,6 @@ export function ItemList({
   const loadThreePages = useCallback(
     function (direction) {
       const state = stateRef.current;
-
-      if (state.currentRequest !== null) {
-        throw new Error("unable to do paralel requests");
-      }
 
       if (direction !== 0 && (direction > 1 || direction < -1)) {
         throw new Error("direction argument should be in range [-1, 1]");
@@ -320,10 +314,6 @@ export function ItemList({
       const scrolling = state.scrolling;
 
       calculateScrollingConstants(event);
-
-      if (state.currentRequest !== null) {
-        return;
-      }
 
       if (scrolling.pageHeight < offsetHeight) {
         throw Error("current scrolling implementation requires offset height to be larger than page height");
