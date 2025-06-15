@@ -6,7 +6,8 @@ export const views = {
 };
 
 export function useNavigation() {
-  const [view, setViewRaw] = useState(views.Files);
+  // const [view, setViewRaw] = useState(views.Files);
+  const [view, setViewRaw] = useState(views.Settings);
   
   var setView = function(view) {
     if (view in views) {

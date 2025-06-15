@@ -44,8 +44,10 @@ export function SettingsView() {
   return (
     <>
       <div className="view">
-        <div>
-          Hello my baby, hello my honney!
+        <div className="sub-view">
+          <div className="settings">
+            <div>Hello my baby, hello my honney!</div>
+          </div>
         </div>
       </div>
     </>

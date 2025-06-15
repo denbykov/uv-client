@@ -102,15 +102,12 @@ export function FilesView() {
       stateRef.current = new State();
 
       return () => {
-        console.log("leaving");
       }
     }
   );
 
   const sendLoadPagesRequest = useCallback(
     function(direction, limit, offset) {
-      console.log(`loading request ${direction} ${limit} ${offset}`);
-
       const state = stateRef.current;
       state.currentRequest = new CurrentRequest(protocol.uuidv4(), direction, offset);
     
