@@ -10,6 +10,7 @@
 body, html {
   height: 100%;
   margin: 0;
+  padding: 0;
 }
 
 body {
@@ -37,6 +38,7 @@ ul, li {
 .button {
   border: 2px solid #D91734;
   box-shadow: 3px 3px 0 #D917347c;
+  cursor: pointer;
 }
 
 .error .button {
@@ -47,6 +49,13 @@ ul, li {
 .button {
   background-color: #D91734;
   border: 1px solid #D91734;
+}
+
+.button.pressed {
+  background-color: #192725;
+  box-shadow: 4px 4px 0 #D917347c;
+  border-color: #D91734;
+  color: #D91734;
 }
 
 .button:hover {
@@ -164,9 +173,27 @@ ul, li {
   transform: translate(-50%, -50%);
 }
 
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navigation-bar {
+  display: flex;
+  flex-direction: row;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.navigation-bar .button {
+  margin: 10px 0px 10px 10px;
+  width: 70px;
+}
+
 .view {
-  width: 100%;
-  height: 100%;
+  flex-grow: 1;
+  overflow: auto;
 
   display: flex;
   flex-direction: row;
@@ -174,9 +201,14 @@ ul, li {
   justify-content: space-around;
 }
 
+.footer {
+  height: 30px;
+  flex-shrink: 0;
+}
+
 .sub-view {
-  height: 90%;
-  margin: 10% 10px 10% 10px;
+  box-sizing: border-box;
+  margin: 0px 10px 0px 10px;
   background-color: #151817;
 
   padding: 20px;
@@ -185,6 +217,7 @@ ul, li {
 
 .main.sub-view {
   width: 100%;
+  height: 100%;
   flex: 4;
 
   display: flex;
@@ -195,6 +228,8 @@ ul, li {
 .side.sub-view {
   width: 100%;
   flex: 2;
+  overflow: auto;
+  height: 100%;
 }
 
 .file-list {
