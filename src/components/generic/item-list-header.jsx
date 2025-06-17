@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 
-export function ItemListHeader({ checkedItems, setCheckedItems, deleteItems }) {
+export function ItemListHeader({ checkedItems, setCheckedItems, deleteItems, setSelectedItem }) {
   const isAnythingChecked = useCallback(
     function() {
       return checkedItems.length > 0;
@@ -26,7 +26,7 @@ export function ItemListHeader({ checkedItems, setCheckedItems, deleteItems }) {
           <div>
             Nothing yet
           </div>
-          <button className="add-item button" onClick={() => setSelectedFile(null)}>+</button>
+          <button className="add-item button" onClick={() => setSelectedItem(null)}>+</button>
         </div>
         <div>
           <div className={"multiaction-container" + (isAnythingChecked() ? "" : " disabled")}>

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { views } from '../navigation.js';
+import { views } from '../hooks/use-navigation.js';
 
 export function NavigationBar({ view, setView }) {
   // Methods

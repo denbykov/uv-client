@@ -1,6 +1,6 @@
 "use strict"
 
-const { app, BrowserWindow , session} = require('electron');
+const { app, BrowserWindow , session, dialog, ipcMain} = require('electron');
 const isDev = require('electron-is-dev');
 const path = require('node:path');
 
@@ -25,6 +25,8 @@ const createWindow = () => {
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'docked' });
   }
+
+  return mainWindow;
 };
 
 // This method will be called when Electron has finished
@@ -43,7 +45,7 @@ app.whenReady().then(() => {
     });
   });
 
-  createWindow();
+  var win = createWindow();
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
@@ -51,6 +53,15 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
+  });
+
+  ipcMain.handle('select-directory', async () => {
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory']
+    });
+
+    if (result.canceled) return null;
+    return result.filePaths[0];
   });
 });
 

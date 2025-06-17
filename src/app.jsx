@@ -14,7 +14,7 @@ import { SettingsView } from './components/settings-view.jsx';
 
 import { useWebSocketHandler } from './protocol/hooks';
 
-import { views, useNavigation } from './navigation.js';
+import { views, useNavigation } from './hooks/use-navigation.js';
 
 function Application() {
   const { send } = useWebSocketHandler();

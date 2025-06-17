@@ -2,3 +2,9 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 "use strict"
+
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+});

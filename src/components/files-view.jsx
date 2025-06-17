@@ -373,6 +373,7 @@ export function FilesView() {
           <ItemListHeader
             checkedItems={checkedItems} setCheckedItems={setCheckedItems}
             deleteItems={deleteFiles}
+            setSelectedItem={setSelectedFile}
           />
           <ItemList 
             childComponent={FileListItem}
