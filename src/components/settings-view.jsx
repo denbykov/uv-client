@@ -7,18 +7,11 @@ import { useWebSocketData } from '../websocket-context';
 
 import * as protocol from '../protocol/index';
 import { useSelectDirectory } from '../hooks/use-select-directory';
-import { useGetSettingsResponse } from '../protocol/hooks';
-import { useUpdateSettingsResponse } from '../protocol/hooks';
 
-// import { 
-//   useDownloadingProgressMessage,
-//   useDownloadingDoneMessage,
-//   useErrorMessage,
-//   useDoneMessage,
-//   useGetFilesResponseMessage,
-//   useDeleteFilesErrorMessage,
-//   useCanceledMessage
-// } from '../protocol/hooks';
+import { 
+  useGetSettingsResponse,
+  useUpdateSettingsResponse
+} from '../protocol/hooks';
 
 class State {
   constructor() {
