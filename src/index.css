@@ -544,14 +544,10 @@ li:nth-child(even) .file-list-item {
 .settings {
   width: 60%;
   height: 100%;
+  box-sizing: border-box;
   border-left: 2px solid #1C3632;
   border-right: 2px solid #1C3632;
-  padding-top: 10px;
   padding-bottom: 10px;
-}
-
-.settings > * {
-  margin: 10px;
 }
 
 .settings .form .item {
@@ -612,4 +608,30 @@ li:nth-child(even) .file-list-item {
 
 .settings .form .item input:disabled {
   box-shadow: 3px 3px 0 #d9173441;
+}
+
+.settings .form .list {
+  width: 100%;
+  padding-top: 10px;
+  overflow-y: scroll
+}
+
+.settings .form {
+  height: 100%;
+  box-sizing: border-box;
+  
+  margin: 10px;
+  padding-bottom: 16px;
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings .form .submit.button {
+  flex-shrink: 0;
+  width: 85px;
+  height: 40px;
+  font-size: 16px;
 }

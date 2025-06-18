@@ -134,6 +134,29 @@ export function builDeleteFilesRequest(uuid, ids) {
   )
 }
 
+export function buildGetSettingsRequest(uuid) {
+  const payload = {
+  }
+  
+  return new Message(
+    new Header(
+      types.GetSettingsRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
+export function buildUpdateSettingsRequest(uuid, payload) {  
+  return new Message(
+    new Header(
+      types.UpdateSettingsRequest,
+      uuid,
+    ),
+    payload,
+  )
+}
+
 function parseMessageBase(dataBuffer) {
   const data = new Uint8Array(dataBuffer);
   const preParsedMessage = Message.parse(data);

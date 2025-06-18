@@ -58,3 +58,5 @@ export const useGetFilesResponseMessage = (handler) => useMessage(handler, types
 export const useGetFileResponseMessage = (handler) => useMessage(handler, types.GetFileResponse);
 
 export const useDeleteFilesErrorMessage = (handler) => useMessage(handler, types.DeleteFilesError);
+export const useGetSettingsResponse = (handler) => useMessage(handler, types.GetSettingsResponse);
+export const useUpdateSettingsResponse = (handler) => useMessage(handler, types.UpdateSettingsResponse);
