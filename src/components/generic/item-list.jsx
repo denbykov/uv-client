@@ -60,7 +60,6 @@ class Items {
 export function ItemList({
   childComponent: ChildComponent,
   sendLoadPagesRequest,
-  deleteFiles,
   lastResponse,
   refresh, setRefresh,
   resetScrolling, setResetScrolling,
@@ -293,14 +292,9 @@ export function ItemList({
     []
   );
 
-  // krutch to make it wait for session establishment
   const loadInitialData = useCallback(
     function () {
-      async function load() {
-        await new Promise(r => setTimeout(r, 100));
-        loadThreePages(0);
-      }
-      load();
+      loadThreePages(0);
     },
     []
   );

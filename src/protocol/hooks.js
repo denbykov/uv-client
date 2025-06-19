@@ -1,6 +1,6 @@
 "use strict"
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import types from './types';
 import { parseMessage } from './message';
@@ -10,6 +10,8 @@ const backendUrl = "ws://localhost:3080/ws";
 
 export function useWebSocketHandler() {
   const ws = useRef(null);
+
+  const [ isActive, setIsActive ] = useState(false);
   
   useEffect(() => {
     ws.current = new WebSocket(backendUrl);
@@ -19,6 +21,10 @@ export function useWebSocketHandler() {
       const { type } = parsed.header;
 
       wsDispatcher.dispatchEvent(new CustomEvent(type, { detail: parsed }));
+    };
+
+    ws.current.onopen = function() {
+      setIsActive(true);
     };
 
     return () => ws.current?.close();
@@ -32,7 +38,7 @@ export function useWebSocketHandler() {
     }
   };
 
-  return { send };
+  return { isActive, send };
 }
 
 function useMessage(handler, messageType) {

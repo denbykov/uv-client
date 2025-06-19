@@ -97,15 +97,6 @@ export function FilesView() {
 
   // Methods
 
-  const init = useCallback(
-    function() {
-      stateRef.current = new State();
-
-      return () => {
-      }
-    }
-  );
-
   const sendLoadPagesRequest = useCallback(
     function(direction, limit, offset) {
       const state = stateRef.current;
@@ -161,6 +152,13 @@ export function FilesView() {
   const handleFilesMessage = useCallback(
     function(message) {
       const state = stateRef.current;
+
+      if (state.currentRequest === null 
+          // && state.currentRequest.uuid === uuid
+        ) {
+        console.error(`no request in progress for message: ${message.payload}`);
+        return;
+      }
 
       var lastResponse = new LastResponse();
       lastResponse.items = message.payload.files;
@@ -326,10 +324,6 @@ export function FilesView() {
     },
     [checkedItems]
   );
-
-  // Effects
-
-  useEffect(init, []);
 
   // Message hooks
 

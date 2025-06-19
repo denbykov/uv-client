@@ -17,16 +17,18 @@ import { useWebSocketHandler } from './protocol/hooks';
 import { views, useNavigation } from './hooks/use-navigation.js';
 
 function Application() {
-  const { send } = useWebSocketHandler();
+  const { isActive, send } = useWebSocketHandler();
   const { view, setView } = useNavigation();
 
   return <WebSocketContext.Provider value={{ send }}>
-    <div className='app'>
-      <NavigationBar view={view} setView={setView}/>
-      {view === views.Files && (<FilesView/>)}
-      {view === views.Settings && (<SettingsView/>)}
-      <Footer/>
-    </div>
+    {isActive === true && (
+      <div className='app'>
+        <NavigationBar view={view} setView={setView}/>
+        {view === views.Files && (<FilesView/>)}
+        {view === views.Settings && (<SettingsView/>)}
+        <Footer/>
+      </div>
+    )}
   </WebSocketContext.Provider>
 }
 

@@ -5,39 +5,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { views } from '../hooks/use-navigation.js';
 
 export function NavigationBar({ view, setView }) {
-  // Methods
-
-  // const handleMessage = useCallback(
-  //   function(message) {
-  //     if (message.header.uuid === state.uuid) {
-  //       setState((prev) => {
-  //         var newState = prev.clone();
-
-  //         newState.fill(message.payload);
-  //         return newState;
-  //       });
-  //     }
-  //   },
-  //   [state]
-  // );
-
-  // Effects
-
-  // useEffect(() => loadFile(), [selectedFile]);
-
-  // Message hooks
-
-  // useGetFileResponseMessage(handleMessage);
-
-  // Rendering
-
-  const selectView = useCallback(
-    function(view) {
-
-    },
-    []
-  );
-
   return (
     <>
       <div className='navigation-bar'>
